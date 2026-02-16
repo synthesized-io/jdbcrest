@@ -30,30 +30,32 @@ public final class DataRetrieval {
             String column = entry.getKey();
             String[] values = entry.getValue();
             if (values == null || values.length == 0) continue;
-            String raw = values[0];
-            int dot = raw.indexOf('.');
-            if (dot <= 0 || dot == raw.length() - 1) continue;
-            String op = raw.substring(0, dot);
-            String val = raw.substring(dot + 1);
+            for (String raw : values) {
+                if (raw == null) continue;
+                int dot = raw.indexOf('.');
+                if (dot <= 0 || dot == raw.length() - 1) continue;
+                String op = raw.substring(0, dot);
+                String val = raw.substring(dot + 1);
 
-            String sqlOp = switch (op) {
-                case "eq" -> "=";
-                case "gt" -> ">";
-                case "gte" -> ">=";
-                case "lt" -> "<";
-                case "lte" -> "<=";
-                default -> null;
-            };
-            if (sqlOp == null) continue;
+                String sqlOp = switch (op) {
+                    case "eq" -> "=";
+                    case "gt" -> ">";
+                    case "gte" -> ">=";
+                    case "lt" -> "<";
+                    case "lte" -> "<=";
+                    default -> null;
+                };
+                if (sqlOp == null) continue;
 
-            conditions.add(column + " " + sqlOp + " ?");
-            Object arg;
-            try {
-                arg = Integer.valueOf(val);
-            } catch (NumberFormatException e) {
-                arg = val;
+                conditions.add(column + " " + sqlOp + " ?");
+                Object arg;
+                try {
+                    arg = Integer.valueOf(val);
+                } catch (NumberFormatException e) {
+                    arg = val;
+                }
+                args.add(arg);
             }
-            args.add(arg);
         }
 
         if (!conditions.isEmpty()) {
