@@ -93,4 +93,16 @@ public class ComparisonTest {
                 .body("[0].id", equalTo(1))
                 .body("[0].name", equalTo("Alice"));
     }
+
+    @TestTemplate
+    void usersTwoConditions(RequestSpecification request) {
+        request
+                .when()
+                .get("users?id=gte.1&id=lt.2")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("[0].id", equalTo(1))
+                .body("[0].name", equalTo("Alice"));
+    }
 }
