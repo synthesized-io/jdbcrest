@@ -32,27 +32,27 @@ public final class DataRetrieval {
             if (values == null || values.length == 0) continue;
             for (String raw : values) {
                 if (raw == null) continue;
-                int dot = raw.indexOf('.');
-                if (dot <= 0 || dot == raw.length() - 1) continue;
-                String op = raw.substring(0, dot);
-                String val = raw.substring(dot + 1);
-
-                String sqlOp = switch (op) {
-                    case "eq" -> "=";
-                    case "gt" -> ">";
-                    case "gte" -> ">=";
-                    case "lt" -> "<";
-                    case "lte" -> "<=";
-                    default -> null;
+                QueryAst.Comparison cmp;
+                try {
+                    cmp = (QueryAst.Comparison) QueryParser.parse(column + "." + raw);
+                } catch (ParseException e) {
+                    throw new IllegalStateException(e);
+                }
+                String sqlOp = switch (cmp.operator()) {
+                    case EQ -> "=";
+                    case GT -> ">";
+                    case GTE -> ">=";
+                    case LT -> "<";
+                    case LTE -> "<=";
                 };
-                if (sqlOp == null) continue;
-
                 conditions.add(column + " " + sqlOp + " ?");
+
+                QueryAst.Value val = cmp.value();
                 Object arg;
                 try {
-                    arg = Integer.valueOf(val);
+                    arg = Integer.valueOf(val.text());
                 } catch (NumberFormatException e) {
-                    arg = val;
+                    arg = val.text();
                 }
                 args.add(arg);
             }

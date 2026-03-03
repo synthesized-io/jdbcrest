@@ -1,0 +1,195 @@
+options {
+  STATIC = false;
+  JAVA_UNICODE_ESCAPE = true;
+  IGNORE_CASE = true;
+}
+
+PARSER_BEGIN(QueryParser)
+package io.synthesized.jdbcrest;
+
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
+public class QueryParser {
+
+  public static QueryAst.Expr parse(String s) throws ParseException {
+    return new QueryParser(new StringReader(s)).root();
+  }
+}
+PARSER_END(QueryParser)
+
+// ---- LEXER ----
+
+<DEFAULT> SKIP : { " " | "\t" | "\n" | "\r" }
+
+TOKEN : {
+    < LPAREN: "(" >
+  | < RPAREN: ")" >
+  | < COMMA: "," >
+  | < DOT: "." >
+  | < COLON: ":" >
+}
+
+// boolean keywords
+TOKEN : {
+    < OR:  "or"  >
+  | < AND: "and" >
+  | < NOT: "not" >
+}
+
+// comparison operators (start with these 5; add more later)
+TOKEN : {
+    < GTE: "gte" >
+  | < LTE: "lte" >
+  | < GT:  "gt"  >
+  | < LT:  "lt"  >
+  | < EQ:  "eq"  >
+}
+
+// quoted value: allows reserved chars inside, supports \" and \\ and \n \t \r
+TOKEN : {
+  < QVALUE:
+      "\""
+      (
+        "\\\"" | "\\\\" | "\\n" | "\\t" | "\\r"
+        | ~["\\","\""]
+      )*
+      "\""
+  >
+}
+
+/**
+ * Unquoted atom value:
+ * PostgREST reserves: , . : ( )
+ * so we exclude those here to force quoting when they appear.
+ *
+ * This allows dates like 2017-01-01 (no reserved chars).
+ */
+TOKEN : {
+  < ATOM:
+      (~[",", ".", ":", "(", ")", "\"", "\r", "\n", " ", "\t"])+
+  >
+}
+
+// ---- PARSER ----
+
+QueryAst.Expr root() :
+{
+  QueryAst.Expr e;
+}
+{
+  e = expr() <EOF> { return e; }
+}
+
+/**
+ * Expression:
+ * - supports explicit calls: or(...), and(...)
+ * - supports implicit OR grouping: (expr, expr, ...)
+ * - supports not.<expr> and not(<expr>)
+ * - supports leaf comparisons: field.op.value
+ */
+QueryAst.Expr expr() :
+{
+  QueryAst.Expr inner;
+}
+{
+    inner = primary()
+    { return inner; }
+}
+
+QueryAst.Expr primary() :
+{
+  QueryAst.Expr e;
+}
+{
+    e = notCall()       { return e; }
+  | e = orCall()        { return e; }
+  | e = andCall()       { return e; }
+  | e = comparison()    { return e; }
+}
+
+QueryAst.Expr notCall() :
+{
+  QueryAst.Expr inner;
+}
+{
+    <NOT> <LPAREN> inner = expr() <RPAREN>
+    { return new QueryAst.Not(inner); }
+}
+
+QueryAst.Expr orCall() :
+{
+  List<QueryAst.Expr> args;
+}
+{
+  <OR> <LPAREN> args = exprList() <RPAREN>
+  { return new QueryAst.Or(args); }
+}
+
+QueryAst.Expr andCall() :
+{
+  List<QueryAst.Expr> args;
+}
+{
+  <AND> <LPAREN> args = exprList() <RPAREN>
+  { return new QueryAst.And(args); }
+}
+
+List<QueryAst.Expr> exprList() :
+{
+  List<QueryAst.Expr> args = new ArrayList<>();
+  QueryAst.Expr e;
+}
+{
+  e = expr() { args.add(e); }
+  ( <COMMA> e = expr() { args.add(e); } )*
+  { return args; }
+}
+
+QueryAst.Expr comparison() :
+{
+  QueryAst.FieldPath field;
+  QueryAst.ComparisonOperator op;
+  QueryAst.Value v;
+}
+{
+  field = fieldPath()
+  <DOT>
+  op = comparisonOperator()
+  <DOT>
+  v = value()
+  { return new QueryAst.Comparison(field, op, v); }
+}
+
+QueryAst.FieldPath fieldPath() :
+{
+  List<String> segs = new ArrayList<>();
+  Token id;
+}
+{
+  id = <ATOM> { segs.add(id.image); }
+ // ( <DOT> id = <ATOM> { segs.add(id.image); } )*
+  { return new QueryAst.FieldPath(segs); }
+}
+
+QueryAst.ComparisonOperator comparisonOperator() :
+{
+  Token t;
+}
+{
+    t = <EQ>  { return QueryAst.ComparisonOperator.EQ; }
+  | t = <GT>  { return QueryAst.ComparisonOperator.GT; }
+  | t = <GTE> { return QueryAst.ComparisonOperator.GTE; }
+  | t = <LT>  { return QueryAst.ComparisonOperator.LT; }
+  | t = <LTE> { return QueryAst.ComparisonOperator.LTE; }
+}
+
+QueryAst.Value value() :
+{
+  Token t;
+}
+{
+    t = <QVALUE> { return new QueryAst.Quoted(QueryAst.unescapeQuoted(t.image)); }
+  | t = <ATOM>   { return new QueryAst.Atom(t.image); }
+}
