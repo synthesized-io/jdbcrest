@@ -15,6 +15,29 @@
 
   <properties>
     <maven.compiler.release>${java.version}</maven.compiler.release>
+    <javacc.plugin.version>3.1.1</javacc.plugin.version>
   </properties>
+
+  <build>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>javacc-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>Build query parser</id>
+                    <goals>
+                        <goal>javacc</goal>
+                    </goals>
+                    <configuration>
+                        <includes>
+                            <include>Query.jj</include>
+                        </includes>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+  </build>
 
 </project>
