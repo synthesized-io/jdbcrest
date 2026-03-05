@@ -44,6 +44,7 @@ public final class DataRetrieval {
                     case GTE -> ">=";
                     case LT -> "<";
                     case LTE -> "<=";
+                    case NEQ -> "<>";
                 };
                 conditions.add(column + " " + sqlOp + " ?");
 
