@@ -105,4 +105,16 @@ public class ComparisonTest {
                 .body("[0].id", equalTo(1))
                 .body("[0].name", equalTo("Alice"));
     }
+
+    @TestTemplate
+    void usersInOperator(RequestSpecification request) {
+        request
+                .when()
+                .get("products?id=in.(100,102,103)")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2))
+                .body("id", Matchers.containsInAnyOrder(100, 102))
+                .body("title", Matchers.containsInAnyOrder("Apples", "Carrots"));
+    }
 }

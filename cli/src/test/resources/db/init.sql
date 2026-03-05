@@ -9,20 +9,33 @@ END
 $$;
 
 -- Schema and tables
+DROP TABLE IF EXISTS public.products;
 DROP TABLE IF EXISTS public.users;
 DROP TABLE IF EXISTS public.empty_table;
+
 CREATE TABLE public.users (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL
 );
+
 CREATE TABLE public.empty_table (
     id INTEGER PRIMARY KEY,
     note TEXT
 );
 
+CREATE TABLE public.products (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    price NUMERIC(10,2) NOT NULL DEFAULT 0
+);
+
 -- Seed data
 INSERT INTO public.users(id, name) VALUES (1, 'Alice');
 INSERT INTO public.users(id, name) VALUES (2, 'Bob');
+
+INSERT INTO public.products(id, title, price) VALUES (100, 'Apples', 1.99);
+INSERT INTO public.products(id, title, price) VALUES (101, 'Bananas', 0.99);
+INSERT INTO public.products(id, title, price) VALUES (102, 'Carrots', 2.49);
 
 -- Grants for PostgREST anon role
 GRANT USAGE ON SCHEMA public TO web_anon;

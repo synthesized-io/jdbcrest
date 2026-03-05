@@ -1,9 +1,9 @@
 import io.synthesized.jdbcrest.ParseException;
-import io.synthesized.jdbcrest.QueryAst;
 import io.synthesized.jdbcrest.QueryAst.*;
 import io.synthesized.jdbcrest.QueryParser;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,9 +16,9 @@ public class QueryParserTest {
         assertThat(exp).isInstanceOf(Comparison.class);
         var comp = (Comparison) exp;
         assertThat(comp).isEqualTo(
-                new Comparison(new Atom("x"),
+                new Comparison(new StringLiteral("x"),
                         ComparisonOperator.GT,
-                        new Atom("42"))
+                        new IntLiteral(42))
         );
     }
 
@@ -28,8 +28,8 @@ public class QueryParserTest {
 
         assertThat(exp).isEqualTo(
                 new Or(List.of(
-                        new Comparison(new Atom("x"), ComparisonOperator.GT, new Atom("42")),
-                        new Comparison(new Atom("y"), ComparisonOperator.LT, new Atom("10"))
+                        new Comparison(new StringLiteral("x"), ComparisonOperator.GT, new IntLiteral(42)),
+                        new Comparison(new StringLiteral("y"), ComparisonOperator.LT, new IntLiteral(10))
                 ))
         );
     }
@@ -40,9 +40,9 @@ public class QueryParserTest {
 
         assertThat(exp).isEqualTo(
                 new And(List.of(
-                        new Comparison(new Atom("a"), ComparisonOperator.EQ, new Atom("1")),
-                        new Comparison(new Atom("b"), ComparisonOperator.GTE, new Atom("2")),
-                        new Comparison(new Atom("c"), ComparisonOperator.LTE, new Atom("3"))
+                        new Comparison(new StringLiteral("a"), ComparisonOperator.EQ, new IntLiteral(1)),
+                        new Comparison(new StringLiteral("b"), ComparisonOperator.GTE, new IntLiteral(2)),
+                        new Comparison(new StringLiteral("c"), ComparisonOperator.LTE, new IntLiteral(3))
                 ))
         );
     }
@@ -52,7 +52,7 @@ public class QueryParserTest {
         Expr exp = QueryParser.parse("x.not.gt.42");
 
         assertThat(exp).isEqualTo(
-                new Not(new Comparison(new Atom("x"), ComparisonOperator.GT, new Atom("42")))
+                new Not(new Comparison(new StringLiteral("x"), ComparisonOperator.GT, new IntLiteral(42)))
         );
     }
 
@@ -62,8 +62,8 @@ public class QueryParserTest {
 
         assertThat(exp).isEqualTo(
                 new Not(new And(List.of(
-                        new Comparison(new Atom("age"), ComparisonOperator.GTE, new Atom("11")),
-                        new Comparison(new Atom("age"), ComparisonOperator.LTE, new Atom("17"))
+                        new Comparison(new StringLiteral("age"), ComparisonOperator.GTE, new IntLiteral(11)),
+                        new Comparison(new StringLiteral("age"), ComparisonOperator.LTE, new IntLiteral(17))
                 )))
         );
     }
@@ -74,10 +74,10 @@ public class QueryParserTest {
 
         assertThat(exp).isEqualTo(
                 new Or(List.of(
-                        new Comparison(new Atom("age"), ComparisonOperator.EQ, new Atom("14")),
+                        new Comparison(new StringLiteral("age"), ComparisonOperator.EQ, new IntLiteral(14)),
                         new Not(new And(List.of(
-                                new Comparison(new Atom("age"), ComparisonOperator.GTE, new Atom("11")),
-                                new Comparison(new Atom("age"), ComparisonOperator.LTE, new Atom("17"))
+                                new Comparison(new StringLiteral("age"), ComparisonOperator.GTE, new IntLiteral(11)),
+                                new Comparison(new StringLiteral("age"), ComparisonOperator.LTE, new IntLiteral(17))
                         )))
                 ))
         );
@@ -91,40 +91,39 @@ public class QueryParserTest {
         assertThat(exp).isEqualTo(
                 new Or(List.of(
                         new And(List.of(
-                                new Comparison(new Atom("a"), ComparisonOperator.EQ, new Atom("1")),
-                                new Comparison(new Atom("b"), ComparisonOperator.EQ, new Atom("2"))
+                                new Comparison(new StringLiteral("a"), ComparisonOperator.EQ, new IntLiteral(1)),
+                                new Comparison(new StringLiteral("b"), ComparisonOperator.EQ, new IntLiteral(2))
                         )),
-                        new Comparison(new Atom("c"), ComparisonOperator.GT, new Atom("0"))
+                        new Comparison(new StringLiteral("c"), ComparisonOperator.GT, new IntLiteral(0))
                 ))
         );
     }
 
     @Test
     void quotedValue_allowsReservedChars() throws ParseException {
-        // Commas, dots, parentheses are reserved; quoted values should allow them.
-        Expr exp = QueryParser.parse("x.eq.\"hello,world\"");
+        Expr exp = QueryParser.parse("x.eq.\"hello, world\"");
 
         assertThat(exp).isEqualTo(
-                new Comparison(new Atom("x"), ComparisonOperator.EQ, new Quoted("hello,world"))
+                new Comparison(new StringLiteral("x"),
+                        ComparisonOperator.EQ, new StringLiteral("hello, world"))
         );
     }
 
     @Test
     void quotedValue_unescapesBackslashAndQuote() throws ParseException {
-        Expr exp = QueryParser.parse("x.eq.\"a\\\\b\\\"c\"");
-
+        Expr exp = QueryParser.parse("x.eq.\"a\\b\\c\"");
         assertThat(exp).isEqualTo(
-                new Comparison(new Atom("x"), ComparisonOperator.EQ, new Quoted("a\\b\"c"))
+                new Comparison(new StringLiteral("x"), ComparisonOperator.EQ, new StringLiteral("a\\b\\c"))
         );
     }
 
     @Test
     void dateAtom_isAccepted() throws ParseException {
-        // PostgREST examples commonly use 2017-01-01 etc. (no reserved chars -> ATOM)
-        Expr exp = QueryParser.parse("created_at.gte.2017-01-01");
-
+        Expr exp = QueryParser.parse("created_at.gte.2017-01-11");
         assertThat(exp).isEqualTo(
-                new Comparison(new Atom("created_at"), ComparisonOperator.GTE, new Atom("2017-01-01"))
+                new Comparison(new StringLiteral("created_at"),
+                        ComparisonOperator.GTE,
+                        new DateLiteral(LocalDate.of(2017, 01, 11)))
         );
     }
 }
