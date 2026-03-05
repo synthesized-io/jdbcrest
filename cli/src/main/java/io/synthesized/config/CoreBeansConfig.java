@@ -1,6 +1,7 @@
 package io.synthesized.config;
 
 import io.synthesized.jdbcrest.DataRetrieval;
+import io.synthesized.jdbcrest.DatabaseType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,6 +12,6 @@ public class CoreBeansConfig {
 
     @Bean
     public DataRetrieval dataRetrieval(DataSource dataSource) {
-        return new DataRetrieval(dataSource);
+        return new DataRetrieval(dataSource, DatabaseType.POSTGRESQL);
         }
 }

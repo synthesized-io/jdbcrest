@@ -8,8 +8,10 @@ PARSER_BEGIN(QueryParser)
 package io.synthesized.jdbcrest;
 
 import java.io.StringReader;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.format.DateTimeFormatter;
 
 public class QueryParser {
 
@@ -49,29 +51,22 @@ TOKEN : {
   | < IN: "in"   >
 }
 
-// quoted value: allows reserved chars inside, supports \" and \\ and \n \t \r
-TOKEN : {
-  < QVALUE:
-      "\""
-      (
-        "\\\"" | "\\\\" | "\\n" | "\\t" | "\\r"
-        | ~["\\","\""]
-      )*
-      "\""
-  >
+TOKEN : /* Numeric literals */
+{
+	< S_DOUBLE: (<S_INTEGER> "." <S_INTEGER> ( ["e","E"] ([ "-","+"])? <S_INTEGER> )?
+				|
+				<S_INTEGER> (".")? ["e","E"] ([ "-","+"])? <S_INTEGER>
+				)>
+  |     <S_DATE: <S_INTEGER> "-" <DIGIT><DIGIT> "-" <DIGIT><DIGIT>>
+  | 	< S_INTEGER: ( <DIGIT> )+ >
+  | 	< #DIGIT: ["0" - "9"] >
 }
 
-/**
- * Unquoted atom value:
- * PostgREST reserves: , . : ( )
- * so we exclude those here to force quoting when they appear.
- *
- * This allows dates like 2017-01-01 (no reserved chars).
- */
-TOKEN : {
-  < ATOM:
-      (~[",", ".", ":", "(", ")", "\"", "\r", "\n", " ", "\t"])+
-  >
+TOKEN: /* String literals */
+{
+	< S_IDENTIFIER:  (( <LETTER> )+ ( <DIGIT> | <LETTER> )*)  >
+| 	< #LETTER: ["a"-"z", "A"-"Z", "_"] >
+|   < S_CHAR_LITERAL: "\"" (~["\""])* "\"" ("\"" (~["\""])* "\"")*>
 }
 
 // ---- PARSER ----
@@ -163,30 +158,47 @@ List<QueryAst.Value> valList() :
 
 QueryAst.Expr comparison() :
 {
-  QueryAst.Value field = null;
+  QueryAst.StringLiteral field = null;
   QueryAst.ComparisonOperator op = null;
-  QueryAst.Value v = null;
+  QueryAst.Expr result = null;
   boolean invert = false;
   List<QueryAst.Value> values = new ArrayList<>();
 }
 {
-  field = value()
+  field = stringValue()
   <DOT>
   (<NOT> <DOT> {invert = true;} ) ?
 
-  ( op = comparisonOperator() <DOT> v = value() )
+  (  result = binaryComp(field, invert)
+  | result = inComp(field, invert))
+
+  {
+    return result;
+  }
+}
+
+QueryAst.Expr binaryComp(QueryAst.StringLiteral field, boolean invert):
+{
+      QueryAst.ComparisonOperator op = null;
+      QueryAst.Value v = null;
+}
+{
+  op = comparisonOperator() <DOT> v = value()
   {
       QueryAst.Expr comp = new QueryAst.Comparison(field, op, v);
-
       return invert ? new QueryAst.Not(comp) : comp;
-    }
-  |
-  ( <IN> <DOT> <LPAREN> values = valList() <RPAREN> )
+  }
+}
 
+QueryAst.Expr inComp(QueryAst.StringLiteral field, boolean invert):
+{
+      List<QueryAst.Value> values = new ArrayList<>();
+}
+{
+  <IN> <DOT> <LPAREN> values = valList() <RPAREN>
   {
-    QueryAst.Expr comp = new QueryAst.In(values) ;
-
-    return invert ? new QueryAst.Not(comp) : comp;
+      QueryAst.Expr comp = new QueryAst.In(field, values) ;
+      return invert ? new QueryAst.Not(comp) : comp;
   }
 }
 
@@ -203,11 +215,29 @@ QueryAst.ComparisonOperator comparisonOperator() :
   | t = <LTE> { return QueryAst.ComparisonOperator.LTE; }
 }
 
+QueryAst.StringLiteral stringValue() :
+{
+  Token t;
+}
+{
+    t = <S_CHAR_LITERAL> {return new QueryAst.StringLiteral(t.image); }
+  | t = <S_IDENTIFIER> {return new QueryAst.StringLiteral(t.image);}
+}
+
 QueryAst.Value value() :
 {
   Token t;
 }
 {
-    t = <QVALUE> { return new QueryAst.Quoted(QueryAst.unescapeQuoted(t.image)); }
-  | t = <ATOM>   { return new QueryAst.Atom(t.image); }
+   t = <S_INTEGER>   { return new QueryAst.IntLiteral(Integer.parseInt(t.image)); }
+  | t = <S_DOUBLE> { return new QueryAst.DoubleLiteral(Double.parseDouble(t.image)); }
+  | t = <S_CHAR_LITERAL> {
+     String quoted = t.image;
+     return new QueryAst.StringLiteral(
+             quoted.substring(1, quoted.length() - 1).replace("\"\"", "\"")); }
+  | t = <S_IDENTIFIER> {return new QueryAst.StringLiteral(t.image);}
+  | t = <S_DATE> { return new QueryAst.DateLiteral(
+        LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(t.image)));}
 }
+
+
