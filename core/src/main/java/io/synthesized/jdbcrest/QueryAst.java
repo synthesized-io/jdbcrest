@@ -1,5 +1,6 @@
 package io.synthesized.jdbcrest;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -9,10 +10,10 @@ public final class QueryAst {
 
     // ---- AST ----
 
-    public sealed interface Expr permits Or, And, Not, Comparison {
+    public sealed interface Expr permits And, Comparison, In, Not, Or {
     }
 
-    public record Or(List<Expr> args) implements Expr {
+    public record Or(Collection<Expr> args) implements Expr {
         public Or {
             Objects.requireNonNull(args, "args");
             args = List.copyOf(args);
@@ -20,7 +21,7 @@ public final class QueryAst {
         }
     }
 
-    public record And(List<Expr> args) implements Expr {
+    public record And(Collection<Expr> args) implements Expr {
         public And {
             Objects.requireNonNull(args, "args");
             args = List.copyOf(args);
@@ -34,7 +35,7 @@ public final class QueryAst {
         }
     }
 
-    public record Comparison(FieldPath field, ComparisonOperator operator, Value value) implements Expr {
+    public record Comparison(Value field, ComparisonOperator operator, Value value) implements Expr {
         public Comparison {
             Objects.requireNonNull(field, "field");
             Objects.requireNonNull(operator, "operator");
@@ -42,23 +43,16 @@ public final class QueryAst {
         }
     }
 
-    public record FieldPath(List<String> segments) {
-        public FieldPath {
-            Objects.requireNonNull(segments, "segments");
-            segments = List.copyOf(segments);
-            if (segments.isEmpty()) throw new IllegalArgumentException("field path must have at least one segment");
-            for (String s : segments) Objects.requireNonNull(s, "field segment");
-        }
-
-        @Override
-        public String toString() {
-            return String.join(".", segments);
+    public record In(Collection<Value> values) implements Expr {
+        public In {
+            Objects.requireNonNull(values, "values");
+            values = List.copyOf(values);
+            if (values.isEmpty()) throw new IllegalArgumentException("in() requires at least one argument");
         }
     }
 
     public enum ComparisonOperator {
-        EQ, GT, GTE, LT, LTE
-        // Extend later with PostgREST operators as needed (like: LIKE, ILIKE, IN, IS, etc.)
+        EQ, NEQ, GT, GTE, LT, LTE
     }
 
     public sealed interface Value permits Atom, Quoted {

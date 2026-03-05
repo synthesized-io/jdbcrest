@@ -38,13 +38,15 @@ TOKEN : {
   | < NOT: "not" >
 }
 
-// comparison operators (start with these 5; add more later)
+// comparison operators
 TOKEN : {
     < GTE: "gte" >
   | < LTE: "lte" >
   | < GT:  "gt"  >
   | < LT:  "lt"  >
   | < EQ:  "eq"  >
+  | < NEQ: "neq" >
+  | < IN: "in"   >
 }
 
 // quoted value: allows reserved chars inside, supports \" and \\ and \n \t \r
@@ -114,7 +116,7 @@ QueryAst.Expr notCall() :
   QueryAst.Expr inner;
 }
 {
-    <NOT> <LPAREN> inner = expr() <RPAREN>
+    <NOT> <DOT> inner = expr()
     { return new QueryAst.Not(inner); }
 }
 
@@ -147,30 +149,45 @@ List<QueryAst.Expr> exprList() :
   { return args; }
 }
 
-QueryAst.Expr comparison() :
+List<QueryAst.Value> valList() :
 {
-  QueryAst.FieldPath field;
-  QueryAst.ComparisonOperator op;
-  QueryAst.Value v;
+  List<QueryAst.Value> args = new ArrayList<>();
+  QueryAst.Value e;
 }
 {
-  field = fieldPath()
-  <DOT>
-  op = comparisonOperator()
-  <DOT>
-  v = value()
-  { return new QueryAst.Comparison(field, op, v); }
+  e = value() { args.add(e); }
+  ( <COMMA> e = value() { args.add(e); } )*
+  { return args; }
 }
 
-QueryAst.FieldPath fieldPath() :
+
+QueryAst.Expr comparison() :
 {
-  List<String> segs = new ArrayList<>();
-  Token id;
+  QueryAst.Value field = null;
+  QueryAst.ComparisonOperator op = null;
+  QueryAst.Value v = null;
+  boolean invert = false;
+  List<QueryAst.Value> values = new ArrayList<>();
 }
 {
-  id = <ATOM> { segs.add(id.image); }
- // ( <DOT> id = <ATOM> { segs.add(id.image); } )*
-  { return new QueryAst.FieldPath(segs); }
+  field = value()
+  <DOT>
+  (<NOT> <DOT> {invert = true;} ) ?
+
+  ( op = comparisonOperator() <DOT> v = value() )
+  {
+      QueryAst.Expr comp = new QueryAst.Comparison(field, op, v);
+
+      return invert ? new QueryAst.Not(comp) : comp;
+    }
+  |
+  ( <IN> <DOT> <LPAREN> values = valList() <RPAREN> )
+
+  {
+    QueryAst.Expr comp = new QueryAst.In(values) ;
+
+    return invert ? new QueryAst.Not(comp) : comp;
+  }
 }
 
 QueryAst.ComparisonOperator comparisonOperator() :
@@ -179,6 +196,7 @@ QueryAst.ComparisonOperator comparisonOperator() :
 }
 {
     t = <EQ>  { return QueryAst.ComparisonOperator.EQ; }
+  | t = <NEQ> { return QueryAst.ComparisonOperator.NEQ; }
   | t = <GT>  { return QueryAst.ComparisonOperator.GT; }
   | t = <GTE> { return QueryAst.ComparisonOperator.GTE; }
   | t = <LT>  { return QueryAst.ComparisonOperator.LT; }
