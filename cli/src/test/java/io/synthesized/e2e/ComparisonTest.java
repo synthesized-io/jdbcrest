@@ -7,6 +7,7 @@ import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 
 @ExtendWith(ComparisonTestExtension.class)
 public class ComparisonTest {
@@ -116,5 +117,50 @@ public class ComparisonTest {
                 .body("size()", equalTo(2))
                 .body("id", Matchers.containsInAnyOrder(100, 102))
                 .body("title", Matchers.containsInAnyOrder("Apples", "Carrots"));
+    }
+
+    @TestTemplate
+    void orOperator(RequestSpecification request) {
+        request
+                .when()
+                .get("products?or=(id.eq.100,id.eq.102)")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2))
+                .body("id", Matchers.containsInAnyOrder(100, 102))
+                .body("title", Matchers.containsInAnyOrder("Apples", "Carrots"));
+    }
+
+    @TestTemplate
+    void andOperatorSingleOperand(RequestSpecification request) {
+        request
+                .when()
+                .get("products?and=(id.eq.100)")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("id", Matchers.contains(100));
+    }
+
+    @TestTemplate
+    void notOrOperator(RequestSpecification request) {
+        request
+                .when()
+                .get("products?not.or=(id.eq.100, id.eq.200)")
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("id", Matchers.not(Matchers.contains(100)));
+    }
+
+    @TestTemplate
+    void notEqOperator(RequestSpecification request) {
+        request
+                .when()
+                .get("products?id=not.eq.100")
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("id", Matchers.not(Matchers.contains(100)));
     }
 }
