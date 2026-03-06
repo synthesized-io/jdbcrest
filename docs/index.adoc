@@ -1,0 +1,142 @@
+= JDBCRest API reference (GET and filtering)
+:toc:
+:toclevels: 3
+:sectanchors:
+:sectnums:
+:icons: font
+:source-highlighter: highlightjs
+:revdate: 2026-03-06
+
+== Base endpoint
+
+JDBCRest exposes each table (and view) as an HTTP collection under the following path:
+
+- `GET /api/data/{schema}/{table}`
+
+Response is a JSON array of records (objects with column names as keys).
+
+Examples:
+
+- `GET /api/data/public/users`
+- `GET /api/data/shop/products`
+
+== Filtering (query string)
+
+You can filter rows by passing query string parameters. Each parameter name is a column, and the value encodes an operator and its operand(s) using a dot-separated mini-language.
+
+Basic shape:
+
+- `{column}={operator}.{value}`
+- `{column}=in.({value1},{value2},...)`
+
+Multiple query parameters are combined with an implicit `AND`, i.e. `col1=...&col2=...` becomes `and(col1...,col2...)`.
+
+Examples:
+
+- `GET /api/data/public/users?name=eq.Bob` → users with name = 'Bob'
+- `GET /api/data/public/users?id=gt.1` → users with id > 1
+- `GET /api/data/public/users?id=gte.1&id=lt.20` → users with 1 <= id < 20
+- `GET /api/data/public/products?id=in.(100,102,103)` → products with `id IN (100,102,103)`
+
+=== Operators
+
+Supported comparison operators (all are case-insensitive):
+
+- `eq` — equal to
+- `neq` — not equal to
+- `gt` — greater than
+- `gte` — greater than or equal
+- `lt` — less than
+- `lte` — less than or equal
+- `in` — value is among a list
+
+=== Values and typing
+
+Values can be:
+
+- Numbers: 1, 3.14, 1e6
+- Dates (ISO): 2024-12-31
+- Strings: either
+  ** Unquoted identifiers (letters, digits, underscore), e.g. `Bob`
+  ** Double-quoted strings for arbitrary text, e.g. `"Bob Smith"`. To include a literal double quote inside a string, escape it by doubling it: `"He said ""hi"""` → He said "hi"
+
+Examples:
+
+- `name=eq."Alice Smith"`
+- `created_at=gte.2024-01-01`
+- `price=lt.10.5`
+- `category=in.("fresh fruit",vegetables)`
+
+TIP: Spaces are allowed inside the parentheses of `in.(...)`, but remember to URL-encode them in real HTTP calls if your tooling doesn’t do it automatically.
+
+== Boolean logic
+
+JDBCRest supports explicit boolean expressions using the `and(...)` and `or(...)` functions, as well as negation with `not`. You can mix comparison terms and nested boolean groups.
+
+- `or(expr1, expr2, ...)`
+- `and(expr1, expr2, ...)`
+- Leaf negation: `column=not.{op}.{value}` (e.g., `id=not.eq.100`)
+- Group negation: `not.or(expr1,expr2,...)`, `not.and(expr1,expr2,...)`
+
+Where each expr is itself either a comparison like `column.eq.42`, an in-list like `column.in.(1,2)`, or a nested boolean group.
+
+Examples (expression syntax):
+
+- `or(name.eq.Alice,name.eq.Bob)`
+- `and(age.gte.18,age.lte.65)`
+- `not.price.lt.10  → price >= 10`
+- `or(and(a.eq.1,b.eq.2),c.gt.0)`
+
+How to use in a URL:
+
+- Pass boolean groups as their own query parameters named `or`, `and`, `not.or`, or `not.and`, with a parenthesized, comma-separated list as the value, e.g. `?or=(expr1,expr2)`.
+- For leaf negation, use a regular column parameter with the `not.` prefix before the operator, e.g. `?id=not.eq.100`.
+- Multiple different parameters are implicitly combined with AND.
+
+Examples (HTTP URLs):
+
+- GET /api/data/public/users?or=(name.eq.Alice,name.eq.Bob)  → users named Alice or Bob
+- GET /api/data/public/users?not.and=(age.gte.11,age.lte.17) → users with age outside 11..17
+
+NOTE: The parser allows whitespace inside expressions; standard URL encoding rules apply.
+
+== How filtering maps to SQL (PostgreSQL)
+
+Internally, filters are transpiled to SQL WHERE clauses. For example:
+
+- id=gt.1 → WHERE id > 1
+- name=eq."Bob" → WHERE name = 'Bob'
+- id=in.(100,102) → WHERE id IN (100, 102)
+- and(age.gte.18,age.lte.65) → WHERE (age >= 18 AND age <= 65)
+- or(a.eq.1,b.eq.2) → WHERE (a = 1 OR b = 2)
+- not.price.lt.10 → WHERE NOT (price < 10)
+
+== Limitations and notes
+
+- Only GET is currently implemented.
+- Filters support eq, neq, gt, gte, lt, lte, in and boolean and/or/not.
+- Multiple query parameters are implicitly combined with AND.
+- There is no support yet for: ordering, limiting/pagination, range headers, selecting specific columns, or write operations.
+- Identifiers are case-insensitive in the filter syntax and mapped as-is to SQL identifiers; use your actual column names.
+
+== Quick examples (curl)
+
+Assuming your service is running on localhost:8080 and your data is in schema public.
+
+- All users:
+  curl "http://localhost:8080/api/data/public/users"
+
+- Users named Bob:
+  curl "http://localhost:8080/api/data/public/users?name=eq.Bob"
+
+- Users with id in a set:
+  curl "http://localhost:8080/api/data/public/users?id=in.(1,2,3)"
+
+- Teenagers (11..17):
+  curl "http://localhost:8080/api/data/public/users?and(age.gte.11,age.lte.17)"
+
+- Not teenagers:
+  curl "http://localhost:8080/api/data/public/users?not.and(age.gte.11,age.lte.17)"
+
+- Products except id 100:
+  curl "http://localhost:8080/api/data/public/products?id=not.eq.100"

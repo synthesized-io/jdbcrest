@@ -24,19 +24,7 @@ public final class DataRetrieval {
             String schema, String table, Map<String, String[]> params
     ) {
 
-        List<String> conditions = new ArrayList<>();
-        List<Object> args = new ArrayList<>();
-
-        List<String> terms = new ArrayList<>();
-        for (Map.Entry<String, String[]> entry : params.entrySet()) {
-            String column = entry.getKey();
-            String[] values = entry.getValue();
-            if (values == null) continue;
-            for (String raw : values) {
-                if (raw == null) continue;
-                terms.add(column + "." + raw);
-            }
-        }
+        List<String> terms = getTerms(params);
 
         QueryAst.Expr expr;
         if (terms.size() > 1) {
@@ -70,6 +58,24 @@ public final class DataRetrieval {
         }
 
         return result;
+    }
+
+    private static List<String> getTerms(Map<String, String[]> params) {
+        List<String> terms = new ArrayList<>();
+        for (Map.Entry<String, String[]> entry : params.entrySet()) {
+            String column = entry.getKey();
+            String[] values = entry.getValue();
+            if (values == null) continue;
+            for (String raw : values) {
+                if (raw == null) continue;
+                switch (column.toLowerCase()) {
+                    case "or", "and", "not.or", "not.and" -> terms.add(column + raw);
+                    case "select" -> throw new IllegalArgumentException("SELECT not implemented");
+                    default -> terms.add(column + "." + raw);
+                }
+            }
+        }
+        return terms;
     }
 
     private static QueryAst.Expr parse(String internalQuery) {
