@@ -5,7 +5,7 @@
 :sectnums:
 :icons: font
 :source-highlighter: highlightjs
-:revdate: 2026-03-06
+:revdate: 2026-03-08
 
 == Base endpoint
 
@@ -111,12 +111,25 @@ Internally, filters are transpiled to SQL WHERE clauses. For example:
 - or(a.eq.1,b.eq.2) → WHERE (a = 1 OR b = 2)
 - not.price.lt.10 → WHERE NOT (price < 10)
 
+== Pagination (limit and offset)
+
+You can paginate results using the following optional query parameters:
+
+- limit — maximum number of rows to return. Non-negative integer. If omitted, all matching rows are returned.
+- offset — number of rows to skip before starting to return rows. Non-negative integer. Defaults to 0.
+
+Examples:
+
+- GET /api/data/public/users?limit=10 → first 10 users
+- GET /api/data/public/users?limit=25&offset=50 → 25 users starting from the 51st row
+- GET /api/data/public/users?name=eq.Bob&limit=5 → up to 5 users named Bob
+
 == Limitations and notes
 
 - Only GET is currently implemented.
 - Filters support eq, neq, gt, gte, lt, lte, in and boolean and/or/not.
 - Multiple query parameters are implicitly combined with AND.
-- There is no support yet for: ordering, limiting/pagination, range headers, selecting specific columns, or write operations.
+- There is no support yet for: ordering, range headers, selecting specific columns, or write operations.
 - Identifiers are case-insensitive in the filter syntax and mapped as-is to SQL identifiers; use your actual column names.
 
 == Quick examples (curl)

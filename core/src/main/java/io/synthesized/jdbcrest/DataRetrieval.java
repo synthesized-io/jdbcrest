@@ -24,16 +24,16 @@ public final class DataRetrieval {
             String schema, String table, Map<String, String[]> params
     ) {
 
-        List<String> terms = getTerms(params);
+        QueryBody body = getTerms(params);
 
         QueryAst.Expr expr;
-        if (terms.size() > 1) {
-            expr = parse("and(" + String.join(",", terms) + ")");
-        } else if (terms.size() == 1) {
-            expr = parse(terms.getFirst());
+        if (body.terms.size() > 1) {
+            expr = parse("and(" + String.join(",", body.terms) + ")");
+        } else if (body.terms.size() == 1) {
+            expr = parse(body.terms.getFirst());
         } else expr = null;
 
-        String sql = databaseType.getTranspiler().toSQL(schema, table, expr);
+        String sql = databaseType.getTranspiler().toSQL(schema, table, body.limit, body.offset, expr);
 
 
         List<Map<String, Object>> result = new ArrayList<>();
@@ -60,7 +60,12 @@ public final class DataRetrieval {
         return result;
     }
 
-    private static List<String> getTerms(Map<String, String[]> params) {
+    private record QueryBody(List<String> terms, Integer limit, Integer offset) {
+    }
+
+    private static QueryBody getTerms(Map<String, String[]> params) {
+        Integer limit = null;
+        Integer offset = null;
         List<String> terms = new ArrayList<>();
         for (Map.Entry<String, String[]> entry : params.entrySet()) {
             String column = entry.getKey();
@@ -70,12 +75,14 @@ public final class DataRetrieval {
                 if (raw == null) continue;
                 switch (column.toLowerCase()) {
                     case "or", "and", "not.or", "not.and" -> terms.add(column + raw);
+                    case "limit" -> limit = Integer.parseInt(raw);
+                    case "offset" -> offset = Integer.parseInt(raw);
                     case "select" -> throw new IllegalArgumentException("SELECT not implemented");
                     default -> terms.add(column + "." + raw);
                 }
             }
         }
-        return terms;
+        return new QueryBody(terms, limit, offset);
     }
 
     private static QueryAst.Expr parse(String internalQuery) {

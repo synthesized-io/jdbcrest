@@ -127,8 +127,10 @@ public class ComparisonTest {
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(2))
-                .body("id", Matchers.containsInAnyOrder(100, 102))
-                .body("title", Matchers.containsInAnyOrder("Apples", "Carrots"));
+                .body("id", Matchers.hasItem(100))
+                .body("id", Matchers.hasItem(102))
+                .body("title", Matchers.hasItem("Apples"))
+                .body("title", Matchers.hasItem("Carrots"));
     }
 
     @TestTemplate
@@ -150,7 +152,8 @@ public class ComparisonTest {
                 .then()
                 .statusCode(200)
                 .body("size()", greaterThan(0))
-                .body("id", Matchers.not(Matchers.contains(100)));
+                .body("id", Matchers.not(Matchers.hasItem(100)))
+                .body("id", Matchers.hasItem(101));
     }
 
     @TestTemplate
@@ -161,6 +164,29 @@ public class ComparisonTest {
                 .then()
                 .statusCode(200)
                 .body("size()", greaterThan(0))
-                .body("id", Matchers.not(Matchers.contains(100)));
+                .body("id", Matchers.not(Matchers.hasItem(100)))
+                .body("id", Matchers.hasItem(101));
+    }
+
+    @TestTemplate
+    void limit(RequestSpecification request) {
+        request
+                .when()
+                .get("products?limit=2")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2))
+                .body("id", Matchers.hasItem(100));
+    }
+
+    @TestTemplate
+    void limitOffset(RequestSpecification request) {
+        request
+                .when()
+                .get("products?offset=1&limit=1")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("id", Matchers.not(Matchers.hasItem(100)));
     }
 }
