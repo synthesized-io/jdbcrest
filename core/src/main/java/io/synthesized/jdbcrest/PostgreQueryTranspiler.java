@@ -9,6 +9,12 @@ import java.util.stream.Collectors;
 public final class PostgreQueryTranspiler implements QueryTranspiler {
 
     @Override
+    public String toLimitOffsetStatement(Integer limit, Integer offset) {
+        return String.format(" limit %s offset %s", limit == null ? "all" : limit.toString(),
+                offset == null ? "0" : offset.toString());
+    }
+
+    @Override
     public String toWhereConditions(QueryAst.Expr query) {
 
         Deque<String> stack = new ArrayDeque<>();
