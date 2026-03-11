@@ -1,43 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>io.synthesized</groupId>
-    <artifactId>jdbcrest</artifactId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.synthesized</groupId>
+        <artifactId>jdbcrest</artifactId>
+        <version>${revision}</version>
+    </parent>
 
-  <artifactId>jdbcrest-core</artifactId>
-  <packaging>jar</packaging>
+    <artifactId>jdbcrest-core</artifactId>
+    <packaging>jar</packaging>
 
-  <name>jdbcrest-core</name>
+    <name>jdbcrest-core</name>
 
-  <properties>
-    <maven.compiler.release>${java.version}</maven.compiler.release>
-    <javacc.plugin.version>3.1.1</javacc.plugin.version>
-  </properties>
+    <properties>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <javacc.plugin.version>3.1.1</javacc.plugin.version>
+        <jooq.version>3.20.11</jooq.version>
+        <jooq.groupId>org.jooq</jooq.groupId>
+    </properties>
 
-  <build>
-    <plugins>
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>javacc-maven-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>Build query parser</id>
-                    <goals>
-                        <goal>javacc</goal>
-                    </goals>
-                    <configuration>
-                        <includes>
-                            <include>Query.jj</include>
-                        </includes>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>javacc-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>Build query parser</id>
+                        <goals>
+                            <goal>javacc</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>Query.jj</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>${jooq.groupId}</groupId>
+            <artifactId>jooq</artifactId>
+            <version>${jooq.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

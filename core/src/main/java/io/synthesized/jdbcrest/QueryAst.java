@@ -93,6 +93,7 @@ public final class QueryAst {
 
     public sealed interface Value permits IntLiteral, DoubleLiteral,
             StringLiteral, DateLiteral {
+        Object objectValue();
         String raw();
         default String quotedIfNeeded() {
             return "'" + raw().replace("'", "''") + "'";
@@ -100,6 +101,11 @@ public final class QueryAst {
     }
 
     public record IntLiteral(int value) implements Value {
+        @Override
+        public Object objectValue() {
+            return value;
+        }
+
         @Override
         public String raw() {
             return Integer.toString(value);
@@ -113,6 +119,11 @@ public final class QueryAst {
 
     public record DoubleLiteral(double value) implements Value {
         @Override
+        public Object objectValue() {
+            return value;
+        }
+
+        @Override
         public String raw() {
             return Double.toString(value);
         }
@@ -125,12 +136,22 @@ public final class QueryAst {
 
     public record StringLiteral(String value) implements Value {
         @Override
+        public Object objectValue() {
+            return value;
+        }
+
+        @Override
         public String raw() {
             return value;
         }
     }
 
     public record DateLiteral(LocalDate value) implements Value {
+        @Override
+        public Object objectValue() {
+            return value;
+        }
+
         @Override
         public String raw() {
             return DateTimeFormatter.ISO_LOCAL_DATE.format(value);

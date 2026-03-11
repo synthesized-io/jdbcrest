@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,11 +14,11 @@ import java.util.Map;
 
 public final class DataRetrieval {
     private final DataSource dataSource;
-    private final DatabaseType databaseType;
+    private final QueryTranspiler queryTranspiler;
 
-    public DataRetrieval(DataSource dataSource, DatabaseType databaseType) {
+    public DataRetrieval(DataSource dataSource, QueryTranspiler queryTranspiler) {
         this.dataSource = dataSource;
-        this.databaseType = databaseType;
+        this.queryTranspiler = queryTranspiler;
     }
 
     public List<Map<String, Object>> readData(
@@ -33,8 +34,8 @@ public final class DataRetrieval {
             expr = parse(body.terms.getFirst());
         } else expr = null;
 
-        String sql = databaseType.getTranspiler().toSQL(schema, table, body.limit, body.offset, expr);
-
+        String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr);
+        System.out.println(">>SQL: " + sql);
 
         List<Map<String, Object>> result = new ArrayList<>();
         try (Connection con = dataSource.getConnection();
@@ -47,7 +48,10 @@ public final class DataRetrieval {
                     Map<String, Object> row = new HashMap<>();
                     for (int i = 1; i <= colCount; i++) {
                         String colName = meta.getColumnLabel(i);
-                        Object value = rs.getObject(i);
+                        Object value = switch (meta.getColumnType(i)) {
+                            case Types.NCLOB -> rs.getString(i);
+                            default -> rs.getObject(i);
+                        };
                         row.put(colName, value);
                     }
                     result.add(row);
