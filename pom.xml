@@ -29,6 +29,9 @@
         <checkstyle.maven.plugin.version>3.6.0</checkstyle.maven.plugin.version>
         <checkstyle.version>13.0.0</checkstyle.version>
         <spring.boot.version>3.4.3</spring.boot.version>
+
+        <jooq.groupId>org.jooq</jooq.groupId>
+        <jooq.edition>oss</jooq.edition>
     </properties>
 
     <dependencyManagement>

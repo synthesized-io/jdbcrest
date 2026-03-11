@@ -33,10 +33,7 @@ public final class DataRetrieval {
         } else if (body.terms.size() == 1) {
             expr = parse(body.terms.getFirst());
         } else expr = null;
-
         String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr);
-        System.out.println(">>SQL: " + sql);
-
         List<Map<String, Object>> result = new ArrayList<>();
         try (Connection con = dataSource.getConnection();
              Statement stmt = con.createStatement();

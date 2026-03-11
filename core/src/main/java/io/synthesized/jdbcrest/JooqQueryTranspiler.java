@@ -28,7 +28,6 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
     public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query) {
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(table, "table");
-
         DSLContext ctx = DSL.using(sqlDialect);
 
         SelectQuery<Record> q = ctx.selectQuery();
