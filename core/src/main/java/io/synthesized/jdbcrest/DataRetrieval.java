@@ -21,9 +21,15 @@ public final class DataRetrieval {
         this.queryTranspiler = queryTranspiler;
     }
 
-    public List<Map<String, Object>> readData(
-            String schema, String table, Map<String, String[]> params
-    ) {
+    public List<Map<String, Object>> readData(String schema, String table, Map<String, String[]> params)
+            throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            return readData(connection, schema, table, params);
+        }
+    }
+
+    public List<Map<String, Object>> readData(Connection connection, String schema,
+                                              String table, Map<String, String[]> params) throws SQLException {
 
         QueryBody body = getTerms(params);
 
@@ -35,9 +41,7 @@ public final class DataRetrieval {
         } else expr = null;
         String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr);
         List<Map<String, Object>> result = new ArrayList<>();
-        try (Connection con = dataSource.getConnection();
-             Statement stmt = con.createStatement();
-        ) {
+        try (Statement stmt = connection.createStatement();) {
             try (ResultSet rs = stmt.executeQuery(sql)) {
                 ResultSetMetaData meta = rs.getMetaData();
                 int colCount = meta.getColumnCount();
@@ -54,8 +58,6 @@ public final class DataRetrieval {
                     result.add(row);
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
 
         return result;

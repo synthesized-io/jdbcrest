@@ -114,3 +114,4 @@ gradle-app.setting
 ## END OF GRADLE ##
 
 .vscode
+/core/.flattened-pom.xml

@@ -22,7 +22,7 @@
         <dependency>
             <groupId>io.synthesized</groupId>
             <artifactId>jdbcrest-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${revision}</version>
         </dependency>
 
         <dependency>

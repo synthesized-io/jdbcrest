@@ -19,6 +19,20 @@
         <jooq.version>3.20.11</jooq.version>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>synthesized-internal</id>
+            <name>Synthesized internal Maven</name>
+            <url>https://synthesizedio.jfrog.io/artifactory/maven-internal/</url>
+        </repository>
+
+        <snapshotRepository>
+            <id>synthesized-internal</id>
+            <name>Synthesized internal Maven snapshots</name>
+            <url>https://synthesizedio.jfrog.io/artifactory/maven-internal/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -38,6 +52,30 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.7.3</version>
+                <configuration>
+                    <flattenMode>oss</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -46,6 +84,7 @@
             <groupId>${jooq.groupId}</groupId>
             <artifactId>jooq</artifactId>
             <version>${jooq.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
