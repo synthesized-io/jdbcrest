@@ -16,7 +16,6 @@
     <properties>
         <lombok.version>1.18.42</lombok.version>
         <spring.boot.version>3.4.3</spring.boot.version>
-        <jooq.edition>oss</jooq.edition>
     </properties>
 
     <dependencies>
