@@ -9,12 +9,25 @@ import java.util.stream.Collectors;
 public final class PostgreQueryTranspiler implements QueryTranspiler {
 
     @Override
+    public String toSQL(String schema, String table, Integer limit, Integer offset,
+                         QueryAst.Expr query) {
+        StringBuilder sql = new StringBuilder("select * from ").append(
+                ansiQuote(schema)).append('.').append(
+                ansiQuote(table));
+        String whereTerm = query == null ? "" : toWhereConditions(query);
+        if (!whereTerm.isEmpty()) {
+            sql.append(" where ").append(whereTerm);
+        }
+        sql.append(" order by 1 ");
+        sql.append(toLimitOffsetStatement(limit, offset));
+        return sql.toString();
+    }
+
     public String toLimitOffsetStatement(Integer limit, Integer offset) {
         return String.format(" limit %s offset %s", limit == null ? "all" : limit.toString(),
                 offset == null ? "0" : offset.toString());
     }
 
-    @Override
     public String toWhereConditions(QueryAst.Expr query) {
 
         Deque<String> stack = new ArrayDeque<>();
@@ -59,5 +72,9 @@ public final class PostgreQueryTranspiler implements QueryTranspiler {
             operands.add(stack.pop());
         }
         return operands;
+    }
+
+    private static String ansiQuote(String string) {
+        return "\"" + string.replace("\"", "\"\"") + "\"";
     }
 }
