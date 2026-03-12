@@ -16,8 +16,8 @@
     </modules>
 
     <properties>
-        <revision>1.1</revision>
-        <java.version>21</java.version>
+        <revision>1.2</revision>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,11 +27,12 @@
         <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
         <jacoco.maven.plugin.version>0.8.14</jacoco.maven.plugin.version>
         <checkstyle.maven.plugin.version>3.6.0</checkstyle.maven.plugin.version>
-        <checkstyle.version>13.0.0</checkstyle.version>
+        <checkstyle.version>12.3.1</checkstyle.version>
         <spring.boot.version>3.4.3</spring.boot.version>
 
         <jooq.groupId>org.jooq</jooq.groupId>
         <jooq.edition>oss</jooq.edition>
+        <jooq.version>3.19.30</jooq.version>
     </properties>
 
     <dependencyManagement>

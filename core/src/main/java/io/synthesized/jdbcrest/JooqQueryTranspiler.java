@@ -48,19 +48,28 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
     }
 
     private static Condition toCondition(QueryAst.Expr expr) {
-        return switch (Objects.requireNonNull(expr, "expr")) {
-            case QueryAst.And and -> and.args().stream()
-                    .map(JooqQueryTranspiler::toCondition)
-                    .reduce(Condition::and).orElseThrow();
+        //NB: convert this to pattern matching in switch after upgrade to Java 21
+        Objects.requireNonNull(expr, "expr");
 
-            case QueryAst.Or or -> or.args().stream()
+        if (expr instanceof QueryAst.And and) {
+            return and.args().stream()
                     .map(JooqQueryTranspiler::toCondition)
-                    .reduce(Condition::or).orElseThrow();
-
-            case QueryAst.Not not -> DSL.not(toCondition(not.arg()));
-            case QueryAst.Comparison comparison -> comparisonToCondition(comparison);
-            case QueryAst.In in -> inToCondition(in);
-        };
+                    .reduce(Condition::and)
+                    .orElseThrow();
+        } else if (expr instanceof QueryAst.Or or) {
+            return or.args().stream()
+                    .map(JooqQueryTranspiler::toCondition)
+                    .reduce(Condition::or)
+                    .orElseThrow();
+        } else if (expr instanceof QueryAst.Not not) {
+            return DSL.not(toCondition(not.arg()));
+        } else if (expr instanceof QueryAst.Comparison comparison) {
+            return comparisonToCondition(comparison);
+        } else if (expr instanceof QueryAst.In in) {
+            return inToCondition(in);
+        } else {
+            throw new IllegalArgumentException("Unsupported expression: " + expr);
+        }
     }
 
     private static Condition comparisonToCondition(QueryAst.Comparison comparison) {
@@ -76,12 +85,18 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
             QueryAst.ComparisonOperator op,
             QueryAst.Value value
     ) {
-        return switch (value) {
-            case QueryAst.IntLiteral i -> compare(fieldName, op, Integer.class, i.value());
-            case QueryAst.DoubleLiteral d -> compare(fieldName, op, Double.class, d.value());
-            case QueryAst.StringLiteral s -> compare(fieldName, op, String.class, s.value());
-            case QueryAst.DateLiteral d -> compare(fieldName, op, LocalDate.class, d.value());
-        };
+        //NB: convert this to pattern matching in switch after upgrade to Java 21
+        if (value instanceof QueryAst.IntLiteral i) {
+            return compare(fieldName, op, Integer.class, i.value());
+        } else if (value instanceof QueryAst.DoubleLiteral d) {
+            return compare(fieldName, op, Double.class, d.value());
+        } else if (value instanceof QueryAst.StringLiteral s) {
+            return compare(fieldName, op, String.class, s.value());
+        } else if (value instanceof QueryAst.DateLiteral d) {
+            return compare(fieldName, op, LocalDate.class, d.value());
+        } else {
+            throw new IllegalArgumentException("Unsupported literal: " + value);
+        }
     }
 
     private static Condition inToCondition(QueryAst.In in) {

@@ -29,8 +29,9 @@ public class ComparisonTestExtension implements TestTemplateInvocationContextPro
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        for (AfterAllCallback comparisonContext : comparisonContexts().reversed()) {
-            comparisonContext.afterAll(context);
+        List<? extends AfterAllCallback> contexts = comparisonContexts();
+        for (int i = contexts.size() - 1; i >= 0; i--) {
+            contexts.get(i).afterAll(context);
         }
         ExtensionContext.Store store = context.getStore(NAMESPACE);
         store.get(NETWORK, Network.class).close();
