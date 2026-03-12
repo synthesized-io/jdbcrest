@@ -32,35 +32,48 @@ public final class PostgreQueryTranspiler implements QueryTranspiler {
 
         Deque<String> stack = new ArrayDeque<>();
         query.accept(expr -> {
-            switch (expr) {
-                case QueryAst.And and -> {
-                    List<String> operands = popN(stack, and.args().size());
-                    stack.push("(" + String.join(" AND ", operands) + ")");
+            if (expr instanceof QueryAst.And and) {
+                List<String> operands = popN(stack, and.args().size());
+                stack.push("(" + String.join(" AND ", operands) + ")");
+            } else if (expr instanceof QueryAst.Comparison comparison) {
+                String sqlOp;
+                switch (comparison.operator()) {
+                    case EQ:
+                        sqlOp = "=";
+                        break;
+                    case GT:
+                        sqlOp = ">";
+                        break;
+                    case GTE:
+                        sqlOp = ">=";
+                        break;
+                    case LT:
+                        sqlOp = "<";
+                        break;
+                    case LTE:
+                        sqlOp = "<=";
+                        break;
+                    case NEQ:
+                        sqlOp = "<>";
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unsupported operator: " + comparison.operator());
                 }
-                case QueryAst.Comparison comparison -> {
-                    String sqlOp = switch (comparison.operator()) {
-                        case EQ -> "=";
-                        case GT -> ">";
-                        case GTE -> ">=";
-                        case LT -> "<";
-                        case LTE -> "<=";
-                        case NEQ -> "<>";
-                    };
-                    stack.push(comparison.field().raw() + " " + sqlOp + " "
-                            + comparison.value().quotedIfNeeded());
-                }
-                case QueryAst.In in -> {
-                    String values = in.values().stream().map(QueryAst.Value::quotedIfNeeded)
-                            .collect(Collectors.joining(", "));
-                    stack.push(in.field().raw() + " IN (" + values + ")");
-                }
-                case QueryAst.Not not -> {
-                    stack.push("NOT (" + stack.pop() + ")");
-                }
-                case QueryAst.Or or -> {
-                    List<String> operands = popN(stack, or.args().size());
-                    stack.push("(" + String.join(" OR ", operands) + ")");
-                }
+
+                stack.push(comparison.field().raw() + " " + sqlOp + " "
+                        + comparison.value().quotedIfNeeded());
+            } else if (expr instanceof QueryAst.In in) {
+                String values = in.values().stream()
+                        .map(QueryAst.Value::quotedIfNeeded)
+                        .collect(Collectors.joining(", "));
+                stack.push(in.field().raw() + " IN (" + values + ")");
+            } else if (expr instanceof QueryAst.Not not) {
+                stack.push("NOT (" + stack.pop() + ")");
+            } else if (expr instanceof QueryAst.Or or) {
+                List<String> operands = popN(stack, or.args().size());
+                stack.push("(" + String.join(" OR ", operands) + ")");
+            } else {
+                throw new IllegalArgumentException("Unsupported expression: " + expr);
             }
         });
         return stack.pop();

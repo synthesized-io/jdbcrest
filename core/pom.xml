@@ -16,7 +16,6 @@
     <properties>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <javacc.plugin.version>3.1.1</javacc.plugin.version>
-        <jooq.version>3.20.11</jooq.version>
     </properties>
 
     <distributionManagement>

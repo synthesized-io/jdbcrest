@@ -37,7 +37,7 @@ public final class DataRetrieval {
         if (body.terms.size() > 1) {
             expr = parse("and(" + String.join(",", body.terms) + ")");
         } else if (body.terms.size() == 1) {
-            expr = parse(body.terms.getFirst());
+            expr = parse(body.terms.get(0));
         } else expr = null;
         String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr);
         List<Map<String, Object>> result = new ArrayList<>();
