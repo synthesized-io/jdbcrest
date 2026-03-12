@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +27,12 @@ public class DataRetrieveControllerImpl implements DataRetrieveController {
             HttpServletRequest request,
             HttpServletResponse response) {
         Map<String, String[]> params = request.getParameterMap();
-        List<Map<String, Object>> rows = dataRetrieval.readData(schema, table, params);
+        List<Map<String, Object>> rows;
+        try {
+            rows = dataRetrieval.readData(schema, table, params);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return rows.stream().map(row -> {
             RecordReply rr = new RecordReply();
             rr.getAdditionalProperties().putAll(row);
