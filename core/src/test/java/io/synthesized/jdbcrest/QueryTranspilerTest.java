@@ -1,4 +1,5 @@
-import io.synthesized.jdbcrest.*;
+package io.synthesized.jdbcrest;
+
 import org.jooq.SQLDialect;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

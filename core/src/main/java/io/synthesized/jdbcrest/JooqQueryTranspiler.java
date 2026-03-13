@@ -25,13 +25,26 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
     }
 
     @Override
-    public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query) {
+    public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query, java.util.Map<String, String> columns) {
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(table, "table");
         DSLContext ctx = DSL.using(sqlDialect);
 
         SelectQuery<Record> q = ctx.selectQuery();
-        q.addSelect(DSL.asterisk());
+        if (columns == null || columns.isEmpty()) {
+            q.addSelect(DSL.asterisk());
+        } else {
+            for (java.util.Map.Entry<String, String> e : columns.entrySet()) {
+                String col = e.getKey();
+                String alias = e.getValue();
+                Field<Object> f = DSL.field(DSL.name(col));
+                if (alias != null && !alias.equals(col)) {
+                    q.addSelect(f.as(DSL.name(alias)));
+                } else {
+                    q.addSelect(f);
+                }
+            }
+        }
         q.addFrom(DSL.table(DSL.name(schema, table)));
 
         if (query != null) {

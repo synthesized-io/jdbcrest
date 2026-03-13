@@ -1,6 +1,6 @@
-import io.synthesized.jdbcrest.ParseException;
+package io.synthesized.jdbcrest;
+
 import io.synthesized.jdbcrest.QueryAst.*;
-import io.synthesized.jdbcrest.QueryParser;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;

@@ -189,4 +189,34 @@ public class ComparisonTest {
                 .body("size()", equalTo(1))
                 .body("id", Matchers.not(Matchers.hasItem(100)));
     }
+
+    @TestTemplate
+    void selectColumns(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=id,price")
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("$", Matchers.everyItem(Matchers.allOf(
+                        Matchers.hasKey("id"),
+                        Matchers.hasKey("price"),
+                        Matchers.not(Matchers.hasKey("title"))
+                )))
+                .body("id", Matchers.hasItem(100));
+    }
+    @TestTemplate
+    void selectColumnsWithAliases(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=c1:id,c2:price")
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("$", Matchers.everyItem(Matchers.allOf(
+                        Matchers.hasKey("c1"),
+                        Matchers.hasKey("c2")
+                )))
+                .body("c1", Matchers.hasItem(100));
+    }
 }

@@ -10,8 +10,25 @@ public final class PostgreQueryTranspiler implements QueryTranspiler {
 
     @Override
     public String toSQL(String schema, String table, Integer limit, Integer offset,
-                         QueryAst.Expr query) {
-        StringBuilder sql = new StringBuilder("select * from ").append(
+                         QueryAst.Expr query, java.util.Map<String, String> columns) {
+        StringBuilder sql = new StringBuilder();
+        if (columns == null || columns.isEmpty()) {
+            sql.append("select *");
+        } else {
+            sql.append("select ");
+            boolean first = true;
+            for (java.util.Map.Entry<String, String> e : columns.entrySet()) {
+                if (!first) sql.append(", ");
+                first = false;
+                String col = e.getKey();
+                String alias = e.getValue();
+                sql.append(ansiQuote(col));
+                if (alias != null && !alias.equals(col)) {
+                    sql.append(" as ").append(ansiQuote(alias));
+                }
+            }
+        }
+        sql.append(" from ").append(
                 ansiQuote(schema)).append('.').append(
                 ansiQuote(table));
         String whereTerm = query == null ? "" : toWhereConditions(query);

@@ -6,3 +6,7 @@ See [product documentation](docs/index.adoc).
 
 This library requires Java version 21.
 
+
+```shell
+mvn -f core/pom.xml clean deploy -DskipTests
+```
