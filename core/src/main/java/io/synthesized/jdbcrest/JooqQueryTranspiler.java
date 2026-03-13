@@ -12,6 +12,7 @@ import org.jooq.impl.DSL;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -25,7 +26,8 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
     }
 
     @Override
-    public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query, java.util.Map<String, String> columns) {
+    public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query,
+                        Map<String, String> columns) {
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(table, "table");
         DSLContext ctx = DSL.using(sqlDialect);
