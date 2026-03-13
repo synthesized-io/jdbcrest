@@ -5,7 +5,7 @@
 :sectnums:
 :icons: font
 :source-highlighter: highlightjs
-:revdate: 2026-03-08
+:revdate: 2026-03-13
 
 == Base endpoint
 
@@ -124,12 +124,37 @@ Examples:
 - GET /api/data/public/users?limit=25&offset=50 → 25 users starting from the 51st row
 - GET /api/data/public/users?name=eq.Bob&limit=5 → up to 5 users named Bob
 
+== Selecting columns (select) and aliases
+
+Use the select query parameter to return only specific columns. You can also assign aliases to the output field names.
+
+Syntax:
+
+- select=col1,col2,...
+- select=alias1:col1,alias2:col2,...
+
+Rules:
+
+- If select is omitted, all columns are returned (SELECT *).
+- Whitespace around commas and colons is ignored.
+- If an alias is not provided, the column name is used as the output key.
+
+Examples:
+
+- GET /api/data/public/products?select=id,price → returns only id and price
+- GET /api/data/public/products?select=c1:id,c2:price → returns id as c1 and price as c2
+
+How it maps to SQL (PostgreSQL):
+
+- select=id,price → SELECT "id", "price" FROM ...
+- select=c1:id,c2:price → SELECT "id" AS "c1", "price" AS "c2" FROM ...
+
 == Limitations and notes
 
 - Only GET is currently implemented.
 - Filters support eq, neq, gt, gte, lt, lte, in and boolean and/or/not.
 - Multiple query parameters are implicitly combined with AND.
-- There is no support yet for: ordering, range headers, selecting specific columns, or write operations.
+- There is no support yet for: ordering, range headers, or write operations.
 - Identifiers are case-insensitive in the filter syntax and mapped as-is to SQL identifiers; use your actual column names.
 
 == Quick examples (curl)
