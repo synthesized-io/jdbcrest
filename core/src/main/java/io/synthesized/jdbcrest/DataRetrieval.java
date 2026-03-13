@@ -39,7 +39,7 @@ public final class DataRetrieval {
         } else if (body.terms.size() == 1) {
             expr = parse(body.terms.get(0));
         } else expr = null;
-        String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr);
+        String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr, body.columns);
         List<Map<String, Object>> result = new ArrayList<>();
         try (Statement stmt = connection.createStatement();) {
             try (ResultSet rs = stmt.executeQuery(sql)) {
@@ -63,13 +63,18 @@ public final class DataRetrieval {
         return result;
     }
 
-    private record QueryBody(List<String> terms, Integer limit, Integer offset) {
+    private record QueryBody(List<String> terms,
+                             Integer limit,
+                             Integer offset,
+                             //Key is the database column name, value is its alias (==key if not provided)
+                             Map<String, String> columns) {
     }
 
     private static QueryBody getTerms(Map<String, String[]> params) {
         Integer limit = null;
         Integer offset = null;
         List<String> terms = new ArrayList<>();
+        Map<String, String> columns = new HashMap<>();
         for (Map.Entry<String, String[]> entry : params.entrySet()) {
             String column = entry.getKey();
             String[] values = entry.getValue();
@@ -80,12 +85,33 @@ public final class DataRetrieval {
                     case "or", "and", "not.or", "not.and" -> terms.add(column + raw);
                     case "limit" -> limit = Integer.parseInt(raw);
                     case "offset" -> offset = Integer.parseInt(raw);
-                    case "select" -> throw new IllegalArgumentException("SELECT not implemented");
+                    case "select" -> columns.putAll(parseSelectParam(raw));
                     default -> terms.add(column + "." + raw);
                 }
             }
         }
-        return new QueryBody(terms, limit, offset);
+        if (columns.isEmpty()) columns = null;
+        return new QueryBody(terms, limit, offset, columns);
+    }
+
+    static Map<String, String> parseSelectParam(String raw) {
+        Map<String, String> columns = new HashMap<>();
+        if (raw == null || raw.isBlank()) return columns;
+        for (String item : raw.split(",")) {
+            if (item.isBlank()) continue;
+            String trimmed = item.trim();
+            int idx = trimmed.indexOf(":");
+            if (idx >= 0) {
+                String alias = trimmed.substring(0, idx).trim();
+                String dbcol = trimmed.substring(idx + 1).trim();
+                if (!alias.isEmpty() && !dbcol.isEmpty()) {
+                    columns.put(dbcol, alias);
+                }
+            } else {
+                columns.put(trimmed, trimmed);
+            }
+        }
+        return columns;
     }
 
     private static QueryAst.Expr parse(String internalQuery) {

@@ -16,7 +16,7 @@
     </modules>
 
     <properties>
-        <revision>1.2</revision>
+        <revision>1.3</revision>
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -138,6 +138,7 @@
             </activation>-->
             <properties>
                 <jooq.groupId>org.jooq.pro-java-17</jooq.groupId>
+                <jooq.version>3.20.9</jooq.version>
                 <jooq.edition>pro</jooq.edition>
             </properties>
         </profile>
