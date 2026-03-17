@@ -4,7 +4,7 @@ JDBCRest is a Java library and a standalone server that turns your JDBC-accessib
 
 See [product documentation](docs/index.adoc).
 
-This library requires Java version 21.
+This library requires Java version 17.
 
 
 ```shell
