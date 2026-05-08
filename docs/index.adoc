@@ -124,35 +124,54 @@ Examples:
 - GET /api/data/public/users?limit=25&offset=50 → 25 users starting from the 51st row
 - GET /api/data/public/users?name=eq.Bob&limit=5 → up to 5 users named Bob
 
-== Selecting columns (select) and aliases
+== Selecting columns (select), aliases and aggregate functions
 
-Use the select query parameter to return only specific columns. You can also assign aliases to the output field names.
+Use the select query parameter to return only specific columns, assign aliases to the output field names, or perform aggregate calculations.
 
 Syntax:
 
 - select=col1,col2,...
 - select=alias1:col1,alias2:col2,...
+- select=count() - returns the total number of rows.
+- select=col.func() - applies an aggregate function to a column.
+- select=alias:col.func() - applies an aggregate function with an alias.
+
+Supported aggregate functions:
+
+- `avg()` — average value (cast to double precision)
+- `count()` — count of rows or non-null values
+- `max()` — maximum value
+- `min()` — minimum value
+- `sum()` — sum of values (cast to double precision)
 
 Rules:
 
 - If select is omitted, all columns are returned (SELECT *).
 - Whitespace around commas and colons is ignored.
-- If an alias is not provided, the column name is used as the output key.
+- If an alias is not provided, the column name (or function name for `count()`) is used as the output key.
+- **Automatic GROUP BY**: If you mix aggregate functions and regular columns in the `select` parameter, JDBCRest automatically groups the results by all non-aggregate columns.
 
 Examples:
 
 - GET /api/data/public/products?select=id,price → returns only id and price
 - GET /api/data/public/products?select=c1:id,c2:price → returns id as c1 and price as c2
+- GET /api/data/public/products?select=count() → returns the count of all products
+- GET /api/data/public/products?select=price.avg() → returns the average price
+- GET /api/data/public/products?select=category,total:price.sum() → returns total price per category (grouped by category)
 
 How it maps to SQL (PostgreSQL):
 
 - select=id,price → SELECT "id", "price" FROM ...
 - select=c1:id,c2:price → SELECT "id" AS "c1", "price" AS "c2" FROM ...
+- select=count() → SELECT count(*) FROM ...
+- select=price.sum() → SELECT sum(CAST("price" AS double precision)) FROM ...
+- select=category,count:id.count() → SELECT "category", count("id") AS "count" FROM ... GROUP BY "category"
 
 == Limitations and notes
 
 - Only GET is currently implemented.
 - Filters support eq, neq, gt, gte, lt, lte, in and boolean and/or/not.
+- Aggregate functions (avg, count, max, min, sum) are supported in the `select` parameter with automatic `GROUP BY`.
 - Multiple query parameters are implicitly combined with AND.
 - There is no support yet for: ordering, range headers, or write operations.
 - Identifiers are case-insensitive in the filter syntax and mapped as-is to SQL identifiers; use your actual column names.
@@ -178,3 +197,6 @@ Assuming your service is running on localhost:8080 and your data is in schema pu
 
 - Products except id 100:
   curl "http://localhost:8080/api/data/public/products?id=not.eq.100"
+
+- Average price per category:
+  curl "http://localhost:8080/api/data/public/products?select=category,avg_price:price.avg()"

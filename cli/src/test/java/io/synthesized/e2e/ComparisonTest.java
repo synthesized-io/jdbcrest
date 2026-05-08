@@ -219,4 +219,60 @@ public class ComparisonTest {
                 )))
                 .body("c1", Matchers.hasItem(100));
     }
+
+    @TestTemplate
+    void aggregateCount(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=c:count()")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("[0].c", equalTo(3));
+    }
+
+    @TestTemplate
+    void aggregateSum(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=sum1:price.sum()")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("[0].sum1", equalTo(5.47F));
+    }
+
+    @TestTemplate
+    void aggregateAvg(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=price.avg()")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("[0].avg", Matchers.is(Matchers.anything()));
+    }
+
+    @TestTemplate
+    void aggregateMinMax(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=min:price.min(),max:price.max()")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(1))
+                .body("[0].min", equalTo(0.99F))
+                .body("[0].max", equalTo(2.49F));
+    }
+
+    @TestTemplate
+    void aggregateGroupBy(RequestSpecification request) {
+        request
+                .when()
+                .get("products?select=price,count:id.count()")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(3))
+                .body("find { it.price == 0.99 }.count", Matchers.is(Matchers.anything()));
+    }
 }
