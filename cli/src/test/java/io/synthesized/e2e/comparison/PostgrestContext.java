@@ -66,6 +66,7 @@ public class PostgrestContext implements ComparisonContext {
         postgrest.addEnv("PGRST_DB_URI", dbUri);
         postgrest.addEnv("PGRST_DB_ANON_ROLE", "web_anon");
         postgrest.addEnv("PGRST_DB_SCHEMAS", "public");
+        postgrest.addEnv("PGRST_DB_AGGREGATES_ENABLED", "true");
         postgrest.start();
         store.put(POSTGREST, postgrest);
         store.put(POSTGREST_PORT, postgrest.getFirstMappedPort());
