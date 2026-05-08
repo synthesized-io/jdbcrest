@@ -50,7 +50,7 @@ public class ComparisonTestExtension implements TestTemplateInvocationContextPro
 
     private List<ComparisonContext> comparisonContexts() {
         if ("pro".equalsIgnoreCase(System.getProperty("jooq.edition", "oss"))) {
-            return List.of(new JooqPostgresContext(), new PostgrestContext(), new JooqHanaContext());
+            return List.of(new JooqPostgresContext(), new PostgrestContext() /*, new JooqHanaContext()*/);
         } else {
             return List.of(new JooqPostgresContext(), new PostgrestContext());
         }

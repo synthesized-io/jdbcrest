@@ -11,9 +11,12 @@ import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Transpiles QueryAst to SQL using jOOQ DSL (without executing).
@@ -25,6 +28,8 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
         this.sqlDialect = sqlDialect;
     }
 
+    private static final Pattern AGGREGATE_PATTERN = Pattern.compile("^([^.]+)\\.(avg|count|max|min|sum)\\(\\)$");
+
     @Override
     public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query,
                         Map<String, String> columns) {
@@ -33,20 +38,58 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
         DSLContext ctx = DSL.using(sqlDialect);
 
         SelectQuery<Record> q = ctx.selectQuery();
+        List<Field<?>> groupByFields = new ArrayList<>();
+        boolean hasAggregates = false;
+
         if (columns == null || columns.isEmpty()) {
             q.addSelect(DSL.asterisk());
         } else {
             for (java.util.Map.Entry<String, String> e : columns.entrySet()) {
                 String col = e.getKey();
                 String alias = e.getValue();
-                Field<Object> f = DSL.field(DSL.name(col));
-                if (alias != null && !alias.equals(col)) {
-                    q.addSelect(f.as(DSL.name(alias)));
+                Field<?> f;
+                boolean isAggregate = false;
+
+                if ("count()".equals(col)) {
+                    f = DSL.count();
+                    isAggregate = true;
                 } else {
-                    q.addSelect(f);
+                    Matcher matcher = AGGREGATE_PATTERN.matcher(col);
+                    if (matcher.matches()) {
+                        String fieldName = matcher.group(1);
+                        String function = matcher.group(2);
+                        Field<Object> arg = DSL.field(DSL.name(fieldName));
+                        f = switch (function) {
+                            case "avg" -> DSL.avg(arg.cast(Double.class));
+                            case "count" -> DSL.count(arg);
+                            case "max" -> DSL.max(arg);
+                            case "min" -> DSL.min(arg);
+                            case "sum" -> DSL.sum(arg.cast(Double.class));
+                            default -> throw new IllegalStateException("Unexpected function: " + function);
+                        };
+                        isAggregate = true;
+                    } else {
+                        f = DSL.field(DSL.name(col));
+                    }
+                }
+
+                if (alias != null && !alias.equals(col)) {
+                    f = f.as(DSL.name(alias));
+                }
+                q.addSelect(f);
+
+                if (isAggregate) {
+                    hasAggregates = true;
+                } else {
+                    groupByFields.add(DSL.field(DSL.name(col)));
                 }
             }
         }
+
+        if (hasAggregates && !groupByFields.isEmpty()) {
+            q.addGroupBy(groupByFields);
+        }
+
         q.addFrom(DSL.table(DSL.name(schema, table)));
 
         if (query != null) {
