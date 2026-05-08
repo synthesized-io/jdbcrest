@@ -224,11 +224,11 @@ public class ComparisonTest {
     void aggregateCount(RequestSpecification request) {
         request
                 .when()
-                .get("products?select=count()")
+                .get("products?select=c:count()")
                 .then()
                 .statusCode(200)
                 .body("size()", equalTo(1))
-                .body("[0].count", equalTo(3));
+                .body("[0].c", equalTo(3));
     }
 
     @TestTemplate
