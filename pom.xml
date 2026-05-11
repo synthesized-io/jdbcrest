@@ -96,6 +96,11 @@
                 </executions>
                 <configuration>
                     <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
+                    <propertyExpansion>checkstyle.header.file=${maven.multiModuleProjectDirectory}/license-header.txt</propertyExpansion>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <testSourceDirectories>
+                        <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
+                    </testSourceDirectories>
                 </configuration>
                 <dependencies>
                     <dependency>

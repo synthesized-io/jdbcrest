@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Synthesized Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.synthesized.e2e.comparison;
 
 import io.restassured.RestAssured;
@@ -5,7 +20,11 @@ import io.restassured.specification.RequestSpecification;
 import io.synthesized.App;
 import io.synthesized.e2e.ComparisonTestExtension;
 import io.synthesized.testcontainers.SapHanaContainer;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.Extension;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -32,12 +51,14 @@ public class JooqHanaContext implements ComparisonContext {
         return List.of(new ParameterResolver() {
 
             @Override
-            public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+            public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+                    throws ParameterResolutionException {
                 return parameterContext.getParameter().getType() == RequestSpecification.class;
             }
 
             @Override
-            public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+            public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+                    throws ParameterResolutionException {
                 ExtensionContext.Store store = extensionContext.getStore(ComparisonTestExtension.NAMESPACE);
                 int port = (int) store.get(APP_HANA_PORT);
                 if (parameterContext.getParameter().getType() == RequestSpecification.class) {
