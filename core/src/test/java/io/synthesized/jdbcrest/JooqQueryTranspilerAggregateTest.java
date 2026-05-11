@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Synthesized Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.synthesized.jdbcrest;
 
 import org.jooq.SQLDialect;
@@ -31,7 +46,7 @@ public class JooqQueryTranspilerAggregateTest {
         Map<String, String> columns = new LinkedHashMap<>();
         columns.put("category", "category");
         columns.put("price.avg()", "avg_price");
-        
+
         String sql = transpiler.toSQL("public", "products", null, null, null, columns);
         assertThat(sql).containsIgnoringCase("avg(");
         assertThat(sql).containsIgnoringCase("group by \"category\"");
@@ -47,15 +62,18 @@ public class JooqQueryTranspilerAggregateTest {
         columns.put("id.count()", "cnt");
 
         String sql = transpiler.toSQL("public", "products", null, null, null, columns);
-        assertThat(sql).containsIgnoringCase("select \"category\" as \"cat\", \"brand\", min(\"price\") as \"min_p\", max(\"price\") as \"max_p\", count(\"id\") as \"cnt\" from \"public\".\"products\" group by \"category\", \"brand\"");
+        assertThat(sql).containsIgnoringCase(
+                "select \"category\" as \"cat\", \"brand\", min(\"price\") as \"min_p\", max(\"price\") as "
+                        + "\"max_p\", count(\"id\") as \"cnt\" from \"public\".\"products\" "
+                        + "group by \"category\", \"brand\"");
     }
-    
+
     @Test
     void testNoAggregatesNoGroupBy() {
         Map<String, String> columns = new LinkedHashMap<>();
         columns.put("id", "id");
         columns.put("name", "name");
-        
+
         String sql = transpiler.toSQL("public", "products", null, null, null, columns);
         assertThat(sql).doesNotContainIgnoringCase("group by");
         assertThat(sql).containsIgnoringCase("select \"id\", \"name\" from \"public\".\"products\"");

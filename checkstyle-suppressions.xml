@@ -5,4 +5,8 @@
   
 <suppressions>
     <suppress files="[/\\]target[/\\]" checks=".*" />
+    <suppress files="src[/\\]test[/\\]java[/\\]" checks="JavadocMethod" />
+    <suppress files="src[/\\]test[/\\]java[/\\]" checks="MagicNumber" />
+    <suppress files="src[/\\]test[/\\]java[/\\]" checks="VisibilityModifier" />
+    <suppress files="src[/\\]test[/\\]java[/\\]" checks="MethodName" />
 </suppressions>
