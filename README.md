@@ -1,3 +1,6 @@
+![Maven Central](https://img.shields.io/maven-central/v/io.synthesized/jdbcrest)
+
+
 # JDBCRest
 
 JDBCRest is a Java library and a standalone server that turns your JDBC-accessible database directly into a RESTful API. The structural constraints and permissions in the database determine the API endpoints and operations. This project is heavily inspired by [PostgREST](https://postgrest.org).
@@ -64,3 +67,7 @@ If you want to develop or test jOOQ Pro specific features in this library, use t
 ```shell
 mvn clean install -Pjooq-pro
 ```
+
+## Publishing a new version to Maven Central
+
+mvn -Ppublish-central clean deploy
