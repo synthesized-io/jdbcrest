@@ -8,10 +8,11 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>jbdcrest-cli</artifactId>
+    <artifactId>jdbcrest-cli</artifactId>
     <packaging>jar</packaging>
 
-    <name>jdbcrest-cli</name>
+    <name>JDBC-REST CLI</name>
+    <description>CLI tool and Spring Boot application for JDBC-REST.</description>
 
     <properties>
         <lombok.version>1.18.42</lombok.version>
