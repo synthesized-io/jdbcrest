@@ -1,4 +1,4 @@
-![Maven Central](https://img.shields.io/maven-central/v/io.synthesized/jdbcrest)
+![Maven Central](https://img.shields.io/maven-central/v/io.synthesized/jdbcrest-core)
 
 
 # JDBCRest
@@ -70,4 +70,6 @@ mvn clean install -Pjooq-pro
 
 ## Publishing a new version to Maven Central
 
+```shell
 mvn -Ppublish-central clean deploy
+```
