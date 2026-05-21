@@ -8,6 +8,36 @@
     <artifactId>jdbcrest</artifactId>
     <version>${revision}</version>
 
+    <name>JDBC-REST</name>
+    <description>A library for transpiling PostgREST-like queries to SQL using jOOQ.</description>
+    <url>https://github.com/synthesized-io/jdbcrest</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>synthesized</id>
+            <name>Synthesized Ltd</name>
+            <email>info@synthesized.io</email>
+            <organization>Synthesized Ltd</organization>
+            <organizationUrl>https://www.synthesized.io</organizationUrl>
+        </developer>
+    </developers>
+
+    <inceptionYear>2026</inceptionYear>
+
+    <scm>
+        <connection>scm:git:git://github.com/synthesized-io/jdbcrest.git</connection>
+        <developerConnection>scm:git:ssh://github.com:synthesized-io/jdbcrest.git</developerConnection>
+        <url>https://github.com/synthesized-io/jdbcrest/tree/main</url>
+    </scm>
+
     <packaging>pom</packaging>
 
     <modules>
@@ -16,7 +46,7 @@
     </modules>
 
     <properties>
-        <revision>1.4</revision>
+        <revision>1.5</revision>
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>

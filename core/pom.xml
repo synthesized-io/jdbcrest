@@ -11,7 +11,8 @@
     <artifactId>jdbcrest-core</artifactId>
     <packaging>jar</packaging>
 
-    <name>jdbcrest-core</name>
+    <name>JDBC-REST Core</name>
+    <description>Core library for JDBC-REST, contains query parser and transpilers.</description>
 
     <properties>
         <maven.compiler.release>${java.version}</maven.compiler.release>
