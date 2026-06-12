@@ -27,14 +27,15 @@ public final class PostgreQueryTranspiler implements QueryTranspiler {
 
     @Override
     public String toSQL(String schema, String table, @Nullable Integer limit, @Nullable Integer offset,
-                         QueryAst.@Nullable Expr query, java.util.@Nullable Map<String, @Nullable String> columns) {
+                         QueryAst.@Nullable Expr query,
+                         java.util.@Nullable Map<String, ? extends @Nullable String> columns) {
         StringBuilder sql = new StringBuilder();
         if (columns == null || columns.isEmpty()) {
             sql.append("select *");
         } else {
             sql.append("select ");
             boolean first = true;
-            for (java.util.Map.Entry<String, @Nullable String> e : columns.entrySet()) {
+            for (java.util.Map.Entry<String, ? extends @Nullable String> e : columns.entrySet()) {
                 if (!first) sql.append(", ");
                 first = false;
                 String col = e.getKey();

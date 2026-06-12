@@ -28,6 +28,6 @@ public sealed interface QueryTranspiler permits
     }
 
     String toSQL(String schema, String table, @Nullable Integer limit, @Nullable Integer offset,
-                 QueryAst.@Nullable Expr query, @Nullable Map<String, @Nullable String> columns);
+                 QueryAst.@Nullable Expr query, @Nullable Map<String, ? extends @Nullable String> columns);
 
 }

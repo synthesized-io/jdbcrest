@@ -51,7 +51,7 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
                         @Nullable Integer limit,
                         @Nullable Integer offset,
                         QueryAst.@Nullable Expr query,
-                        @Nullable Map<String, @Nullable String> columns) {
+                        @Nullable Map<String, ? extends @Nullable String> columns) {
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(table, "table");
         DSLContext ctx = DSL.using(sqlDialect);
@@ -63,7 +63,7 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
         if (columns == null || columns.isEmpty()) {
             q.addSelect(DSL.asterisk());
         } else {
-            for (java.util.Map.Entry<String, @Nullable String> e : columns.entrySet()) {
+            for (java.util.Map.Entry<String, ? extends @Nullable String> e : columns.entrySet()) {
                 String col = e.getKey();
                 String alias = e.getValue();
                 Field<?> f;

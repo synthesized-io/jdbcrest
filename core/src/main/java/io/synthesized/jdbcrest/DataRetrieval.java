@@ -39,16 +39,16 @@ public final class DataRetrieval {
     }
 
     public List<Map<String, @Nullable Object>> readData(String schema, String table,
-                                                        Map<String, String @Nullable[]> params)
+                                                        Map<String, ? extends String @Nullable []> params)
             throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             return readData(connection, schema, table, params);
         }
     }
 
-    public List<Map<String, @Nullable Object>> readData(Connection connection, String schema,
-                                                        String table,
-                                                        Map<String, String @Nullable[]> params) throws SQLException {
+    public List<Map<String, @Nullable Object>> readData(Connection connection, String schema, String table,
+                                                        Map<String, ? extends String @Nullable []> params)
+            throws SQLException {
 
         QueryBody body = getTerms(params);
 
@@ -89,12 +89,12 @@ public final class DataRetrieval {
                              @Nullable Map<String, @Nullable String> columns) {
     }
 
-    private static QueryBody getTerms(Map<String, String @Nullable[]> params) {
+    private static QueryBody getTerms(Map<String, ? extends String @Nullable []> params) {
         Integer limit = null;
         Integer offset = null;
         List<String> terms = new ArrayList<>();
         Map<String, @Nullable String> columns = new HashMap<>();
-        for (Map.Entry<String, String @Nullable[]> entry : params.entrySet()) {
+        for (Map.Entry<String, ? extends String @Nullable []> entry : params.entrySet()) {
             String column = entry.getKey();
             String @Nullable[] values = entry.getValue();
             if (values == null) continue;
