@@ -91,6 +91,7 @@ public final class QueryAst {
 
     public record In(StringLiteral field, Collection<Value> values) implements Expr {
         public In {
+            Objects.requireNonNull(field, "field");
             Objects.requireNonNull(values, "values");
             values = List.copyOf(values);
             if (values.isEmpty()) throw new IllegalArgumentException("in() requires at least one argument");

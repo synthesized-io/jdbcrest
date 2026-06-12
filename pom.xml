@@ -63,6 +63,11 @@
         <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
         <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
         <central.publishing.maven.plugin.version>0.10.0</central.publishing.maven.plugin.version>
+        <lombok.version>1.18.42</lombok.version>
+        <jspecify.version>1.0.0</jspecify.version>
+        <!-- Error Prone 2.41.0 is the last release that runs on JDK 17 (newer ones require JDK 21+) -->
+        <errorprone.version>2.41.0</errorprone.version>
+        <nullaway.version>0.13.6</nullaway.version>
 
 
         <jooq.groupId>org.jooq</jooq.groupId>
@@ -93,6 +98,36 @@
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
                         <release>${java.version}</release>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>com.google.errorprone</groupId>
+                                <artifactId>error_prone_core</artifactId>
+                                <version>${errorprone.version}</version>
+                            </path>
+                            <path>
+                                <groupId>com.uber.nullaway</groupId>
+                                <artifactId>nullaway</artifactId>
+                                <version>${nullaway.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <compilerArgs>
+                            <arg>-XDcompilePolicy=simple</arg>
+                            <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+                            <arg>--should-stop=ifError=FLOW</arg>
+                            <arg>-Xplugin:ErrorProne
+                                -XepDisableAllChecks
+                                -Xep:NullAway:ERROR
+                                -XepExcludedPaths:.*[\\/]generated-sources[\\/].*
+                                -XepOpt:NullAway:AnnotatedPackages=io.synthesized
+                                -XepOpt:NullAway:JSpecifyMode=true
+                                -XepOpt:NullAway:HandleTestAssertionLibraries=true
+                                -XepOpt:NullAway:ExcludedFieldAnnotations=org.springframework.beans.factory.annotation.Autowired</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             </plugins>
@@ -149,6 +184,12 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>${jspecify.version}</version>
+        </dependency>
+
         <!-- Test dependencies (inherited by modules) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

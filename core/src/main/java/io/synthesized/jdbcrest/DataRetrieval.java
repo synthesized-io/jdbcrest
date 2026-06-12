@@ -15,6 +15,8 @@
  */
 package io.synthesized.jdbcrest;
 
+import org.jspecify.annotations.Nullable;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -36,32 +38,34 @@ public final class DataRetrieval {
         this.queryTranspiler = queryTranspiler;
     }
 
-    public List<Map<String, Object>> readData(String schema, String table, Map<String, String[]> params)
+    public List<Map<String, @Nullable Object>> readData(String schema, String table,
+                                                        Map<String, ? extends String @Nullable []> params)
             throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             return readData(connection, schema, table, params);
         }
     }
 
-    public List<Map<String, Object>> readData(Connection connection, String schema,
-                                              String table, Map<String, String[]> params) throws SQLException {
+    public List<Map<String, @Nullable Object>> readData(Connection connection, String schema, String table,
+                                                        Map<String, ? extends String @Nullable []> params)
+            throws SQLException {
 
         QueryBody body = getTerms(params);
 
-        QueryAst.Expr expr;
+        QueryAst.@Nullable Expr expr;
         if (body.terms.size() > 1) {
             expr = parse("and(" + String.join(",", body.terms) + ")");
         } else if (body.terms.size() == 1) {
             expr = parse(body.terms.get(0));
         } else expr = null;
         String sql = queryTranspiler.toSQL(schema, table, body.limit, body.offset, expr, body.columns);
-        List<Map<String, Object>> result = new ArrayList<>();
-        try (Statement stmt = connection.createStatement();) {
+        List<Map<String, @Nullable Object>> result = new ArrayList<>();
+        try (Statement stmt = connection.createStatement()) {
             try (ResultSet rs = stmt.executeQuery(sql)) {
                 ResultSetMetaData meta = rs.getMetaData();
                 int colCount = meta.getColumnCount();
                 while (rs.next()) {
-                    Map<String, Object> row = new HashMap<>();
+                    Map<String, @Nullable Object> row = new HashMap<>();
                     for (int i = 1; i <= colCount; i++) {
                         String colName = meta.getColumnLabel(i);
                         Object value = switch (meta.getColumnType(i)) {
@@ -79,20 +83,20 @@ public final class DataRetrieval {
     }
 
     private record QueryBody(List<String> terms,
-                             Integer limit,
-                             Integer offset,
+                             @Nullable Integer limit,
+                             @Nullable Integer offset,
                              //Key is the database column name, value is its alias (==key if not provided)
-                             Map<String, String> columns) {
+                             @Nullable Map<String, @Nullable String> columns) {
     }
 
-    private static QueryBody getTerms(Map<String, String[]> params) {
+    private static QueryBody getTerms(Map<String, ? extends String @Nullable []> params) {
         Integer limit = null;
         Integer offset = null;
         List<String> terms = new ArrayList<>();
-        Map<String, String> columns = new HashMap<>();
-        for (Map.Entry<String, String[]> entry : params.entrySet()) {
+        Map<String, @Nullable String> columns = new HashMap<>();
+        for (Map.Entry<String, ? extends String @Nullable []> entry : params.entrySet()) {
             String column = entry.getKey();
-            String[] values = entry.getValue();
+            String @Nullable[] values = entry.getValue();
             if (values == null) continue;
             for (String raw : values) {
                 if (raw == null) continue;
@@ -105,11 +109,10 @@ public final class DataRetrieval {
                 }
             }
         }
-        if (columns.isEmpty()) columns = null;
-        return new QueryBody(terms, limit, offset, columns);
+        return new QueryBody(terms, limit, offset, columns.isEmpty() ? null : columns);
     }
 
-    static Map<String, String> parseSelectParam(String raw) {
+    static Map<String, String> parseSelectParam(@Nullable String raw) {
         Map<String, String> columns = new HashMap<>();
         if (raw == null || raw.isBlank()) return columns;
         for (String item : raw.split(",")) {

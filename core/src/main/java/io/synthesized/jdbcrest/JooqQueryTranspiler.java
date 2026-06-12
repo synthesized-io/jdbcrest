@@ -24,6 +24,7 @@ import org.jooq.SQLDialect;
 import org.jooq.SelectQuery;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -46,8 +47,11 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
     private static final Pattern AGGREGATE_PATTERN = Pattern.compile("^([^.]+)\\.(avg|count|max|min|sum)\\(\\)$");
 
     @Override
-    public String toSQL(String schema, String table, Integer limit, Integer offset, QueryAst.Expr query,
-                        Map<String, String> columns) {
+    public String toSQL(String schema, String table,
+                        @Nullable Integer limit,
+                        @Nullable Integer offset,
+                        QueryAst.@Nullable Expr query,
+                        @Nullable Map<String, ? extends @Nullable String> columns) {
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(table, "table");
         DSLContext ctx = DSL.using(sqlDialect);
@@ -59,7 +63,7 @@ public final class JooqQueryTranspiler implements QueryTranspiler {
         if (columns == null || columns.isEmpty()) {
             q.addSelect(DSL.asterisk());
         } else {
-            for (java.util.Map.Entry<String, String> e : columns.entrySet()) {
+            for (java.util.Map.Entry<String, ? extends @Nullable String> e : columns.entrySet()) {
                 String col = e.getKey();
                 String alias = e.getValue();
                 Field<?> f;

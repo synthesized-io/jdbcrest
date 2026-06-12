@@ -15,9 +15,9 @@
  */
 package io.synthesized.controller;
 
+import io.synthesized.jdbcrest.DataRetrieval;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import io.synthesized.jdbcrest.DataRetrieval;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,16 +42,17 @@ public class DataRetrieveControllerImpl implements DataRetrieveController {
             HttpServletRequest request,
             HttpServletResponse response) {
         Map<String, String[]> params = request.getParameterMap();
-        List<Map<String, Object>> rows;
+        // var: whether javac sees readData's Map values as @Nullable here depends on the JDK
+        // patch level (JDK-8225377 backports), so the row type must not be spelled out.
         try {
-            rows = dataRetrieval.readData(schema, table, params);
+            final var rows = dataRetrieval.readData(schema, table, params);
+            return rows.stream().map(row -> {
+                RecordReply rr = new RecordReply();
+                rr.getAdditionalProperties().putAll(row);
+                return rr;
+            }).toList();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return rows.stream().map(row -> {
-            RecordReply rr = new RecordReply();
-            rr.getAdditionalProperties().putAll(row);
-            return rr;
-        }).toList();
     }
 }
