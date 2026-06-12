@@ -65,7 +65,8 @@
         <central.publishing.maven.plugin.version>0.10.0</central.publishing.maven.plugin.version>
         <lombok.version>1.18.42</lombok.version>
         <jspecify.version>1.0.0</jspecify.version>
-        <errorprone.version>2.50.0</errorprone.version>
+        <!-- Error Prone 2.41.0 is the last release that runs on JDK 17 (newer ones require JDK 21+) -->
+        <errorprone.version>2.41.0</errorprone.version>
         <nullaway.version>0.13.6</nullaway.version>
 
 
