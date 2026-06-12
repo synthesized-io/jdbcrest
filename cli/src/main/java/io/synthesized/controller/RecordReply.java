@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,5 +31,5 @@ public class RecordReply {
     @Getter(
             onMethod_ = @JsonAnyGetter
     )
-    private final Map<String, Object> additionalProperties = new HashMap<>();
+    private final Map<String, @Nullable Object> additionalProperties = new HashMap<>();
 }

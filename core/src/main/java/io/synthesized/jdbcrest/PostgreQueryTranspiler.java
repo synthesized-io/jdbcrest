@@ -15,6 +15,8 @@
  */
 package io.synthesized.jdbcrest;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -24,15 +26,15 @@ import java.util.stream.Collectors;
 public final class PostgreQueryTranspiler implements QueryTranspiler {
 
     @Override
-    public String toSQL(String schema, String table, Integer limit, Integer offset,
-                         QueryAst.Expr query, java.util.Map<String, String> columns) {
+    public String toSQL(String schema, String table, @Nullable Integer limit, @Nullable Integer offset,
+                         QueryAst.@Nullable Expr query, java.util.@Nullable Map<String, @Nullable String> columns) {
         StringBuilder sql = new StringBuilder();
         if (columns == null || columns.isEmpty()) {
             sql.append("select *");
         } else {
             sql.append("select ");
             boolean first = true;
-            for (java.util.Map.Entry<String, String> e : columns.entrySet()) {
+            for (java.util.Map.Entry<String, @Nullable String> e : columns.entrySet()) {
                 if (!first) sql.append(", ");
                 first = false;
                 String col = e.getKey();
@@ -55,7 +57,7 @@ public final class PostgreQueryTranspiler implements QueryTranspiler {
         return sql.toString();
     }
 
-    public String toLimitOffsetStatement(Integer limit, Integer offset) {
+    public String toLimitOffsetStatement(@Nullable Integer limit, @Nullable Integer offset) {
         return String.format(" limit %s offset %s", limit == null ? "all" : limit.toString(),
                 offset == null ? "0" : offset.toString());
     }
@@ -68,29 +70,14 @@ public final class PostgreQueryTranspiler implements QueryTranspiler {
                 List<String> operands = popN(stack, and.args().size());
                 stack.push("(" + String.join(" AND ", operands) + ")");
             } else if (expr instanceof QueryAst.Comparison comparison) {
-                String sqlOp;
-                switch (comparison.operator()) {
-                    case EQ:
-                        sqlOp = "=";
-                        break;
-                    case GT:
-                        sqlOp = ">";
-                        break;
-                    case GTE:
-                        sqlOp = ">=";
-                        break;
-                    case LT:
-                        sqlOp = "<";
-                        break;
-                    case LTE:
-                        sqlOp = "<=";
-                        break;
-                    case NEQ:
-                        sqlOp = "<>";
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported operator: " + comparison.operator());
-                }
+                String sqlOp = switch (comparison.operator()) {
+                    case EQ -> "=";
+                    case GT -> ">";
+                    case GTE -> ">=";
+                    case LT -> "<";
+                    case LTE -> "<=";
+                    case NEQ -> "<>";
+                };
 
                 stack.push(comparison.field().raw() + " " + sqlOp + " "
                         + comparison.value().quotedIfNeeded());

@@ -15,9 +15,9 @@
  */
 package io.synthesized.controller;
 
+import io.synthesized.jdbcrest.DataRetrieval;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import io.synthesized.jdbcrest.DataRetrieval;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,8 +41,8 @@ public class DataRetrieveControllerImpl implements DataRetrieveController {
             @PathVariable(name = "table") String table,
             HttpServletRequest request,
             HttpServletResponse response) {
-        Map<String, String[]> params = request.getParameterMap();
-        List<Map<String, Object>> rows;
+        Map<String,  String[]> params = request.getParameterMap();
+        List<Map<String,  Object>> rows;
         try {
             rows = dataRetrieval.readData(schema, table, params);
         } catch (SQLException e) {
