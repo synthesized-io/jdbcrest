@@ -37,6 +37,7 @@ public class CoreBeansConfig {
         QueryTranspiler queryTranspiler =
                 switch (databaseTypeProp.toUpperCase()) {
                     case "JOOQ_POSTGRES" -> new JooqQueryTranspiler(SQLDialect.POSTGRES);
+                    case "JOOQ_H2" -> new JooqQueryTranspiler(SQLDialect.H2);
                     case "JOOQ_HANA" -> new JooqQueryTranspiler(SQLDialect.valueOf("HANA"));
                     default -> new PostgreQueryTranspiler();
                 };

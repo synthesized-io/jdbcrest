@@ -16,6 +16,7 @@
 package io.synthesized.e2e;
 
 import io.synthesized.e2e.comparison.ComparisonContext;
+import io.synthesized.e2e.comparison.JooqH2Context;
 import io.synthesized.e2e.comparison.JooqPostgresContext;
 import io.synthesized.e2e.comparison.JooqHanaContext;
 import io.synthesized.e2e.comparison.PostgrestContext;
@@ -70,9 +71,10 @@ public class ComparisonTestExtension implements TestTemplateInvocationContextPro
 
     private List<ComparisonContext> comparisonContexts() {
         if ("pro".equalsIgnoreCase(System.getProperty("jooq.edition", "oss"))) {
-            return List.of(new JooqPostgresContext(), new PostgrestContext(), new JooqHanaContext());
+            return List.of(
+                    new JooqPostgresContext(), new JooqH2Context(), new PostgrestContext(), new JooqHanaContext());
         } else {
-            return List.of(new JooqPostgresContext(), new PostgrestContext());
+            return List.of(new JooqPostgresContext(), new JooqH2Context(), new PostgrestContext());
         }
     }
 
