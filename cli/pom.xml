@@ -15,7 +15,7 @@
     <description>CLI tool and Spring Boot application for JDBC-REST.</description>
 
     <properties>
-        <spring.boot.version>3.4.3</spring.boot.version>
+        <spring.boot.version>4.1.0</spring.boot.version>
     </properties>
 
     <dependencies>
