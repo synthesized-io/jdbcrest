@@ -70,7 +70,7 @@
         <jspecify.version>1.0.0</jspecify.version>
         <asciidoctor.maven.plugin.version>3.2.0</asciidoctor.maven.plugin.version>
         <!-- Error Prone 2.41.0 is the last release that runs on JDK 17 (newer ones require JDK 21+) -->
-        <errorprone.version>2.41.0</errorprone.version>
+        <errorprone.version>2.50.0</errorprone.version>
         <nullaway.version>0.13.7</nullaway.version>
 
 
