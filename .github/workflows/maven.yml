@@ -22,3 +22,11 @@ jobs:
           token: ${{ secrets.TC_CLOUD_TOKEN }}
       - name: Build with Maven
         run: mvn -B package
+      - name: Deploy documentation to GitHub Pages
+        if: success() && github.ref == 'refs/heads/main'
+        uses: crazy-max/ghaction-github-pages@v5
+        with:
+          target_branch: gh-pages
+          build_dir: docs/target/generated-docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

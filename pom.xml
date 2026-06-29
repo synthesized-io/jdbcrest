@@ -43,6 +43,7 @@
     <modules>
         <module>core</module>
         <module>cli</module>
+        <module>docs</module>
     </modules>
 
     <properties>
@@ -65,6 +66,7 @@
         <central.publishing.maven.plugin.version>0.11.0</central.publishing.maven.plugin.version>
         <lombok.version>1.18.46</lombok.version>
         <jspecify.version>1.0.0</jspecify.version>
+        <asciidoctor.maven.plugin.version>3.2.0</asciidoctor.maven.plugin.version>
         <!-- Error Prone 2.41.0 is the last release that runs on JDK 17 (newer ones require JDK 21+) -->
         <errorprone.version>2.41.0</errorprone.version>
         <nullaway.version>0.13.7</nullaway.version>
@@ -229,6 +231,7 @@
                             <excludeArtifacts>
                                 <excludeArtifact>jdbcrest</excludeArtifact>
                                 <excludeArtifact>jdbcrest-cli</excludeArtifact>
+                                <excludeArtifact>jdbcrest-docs</excludeArtifact>
                             </excludeArtifacts>
                         </configuration>
                     </plugin>
