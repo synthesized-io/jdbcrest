@@ -8,6 +8,9 @@ updates:
   ignore:
   - dependency-name: "org.springframework.boot:*"
     versions: [">=4.0.0"]
+  - dependency-name: "org.jooq:jooq"
+    # Starting from 3.20, jooq requires Java 21. We're still targeting 17.
+    versions: [">=3.20.0"]
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
