@@ -17,7 +17,7 @@ To ensure behavioral parity, the project includes a suite of **comparison tests*
 
 ## Documentation
 
-See [product documentation](docs/index.adoc).
+See [product documentation](https://docs.synthesized.io/jdbcrest/).
 
 ## Requirements
 
