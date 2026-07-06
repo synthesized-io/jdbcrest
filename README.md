@@ -1,4 +1,4 @@
-![Maven Central](https://img.shields.io/maven-central/v/io.synthesized/jdbcrest-core)
+[![Maven Central](https://img.shields.io/maven-central/v/io.synthesized/jdbcrest-core)](https://central.sonatype.com/artifact/io.synthesized/jdbcrest-core)
 
 
 # JDBCRest
