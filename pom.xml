@@ -170,7 +170,7 @@
                                 <!-- Non-test dependencies (including transitive ones)
                                     must not require a JVM newer than the target bytecode version -->
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>${maven.compiler.release}</maxJdkVersion>
+                                    <maxJdkVersion>${java.version}</maxJdkVersion>
                                     <searchTransitive>true</searchTransitive>
                                     <ignoredScopes>
                                         <ignoredScope>test</ignoredScope>
