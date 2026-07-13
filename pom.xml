@@ -53,7 +53,7 @@
         <!-- Java release used to compile the test sources (tests may use newer language features). -->
         <java.test.version>21</java.test.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.version>6.1.1</junit.version>
+        <junit.version>6.1.2</junit.version>
         <assertj.core.version>3.27.7</assertj.core.version>
         <approvaltests.version>31.0.0</approvaltests.version>
         <maven.surefire.plugin.version>3.5.6</maven.surefire.plugin.version>
