@@ -77,7 +77,7 @@
 
         <jooq.groupId>org.jooq</jooq.groupId>
         <jooq.edition>oss</jooq.edition>
-        <jooq.version>3.19.36</jooq.version>
+        <jooq.version>3.19.37</jooq.version>
     </properties>
 
     <dependencyManagement>
