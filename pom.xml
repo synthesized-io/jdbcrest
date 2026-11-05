@@ -57,7 +57,7 @@
         <assertj.core.version>3.27.7</assertj.core.version>
         <approvaltests.version>31.0.0</approvaltests.version>
         <maven.surefire.plugin.version>3.6.1</maven.surefire.plugin.version>
-        <jacoco.maven.plugin.version>0.8.15</jacoco.maven.plugin.version>
+        <jacoco.maven.plugin.version>0.8.16</jacoco.maven.plugin.version>
         <checkstyle.maven.plugin.version>3.6.0</checkstyle.maven.plugin.version>
         <checkstyle.version>14.3.0</checkstyle.version>
         <spring.boot.version>4.1.0</spring.boot.version>
