@@ -28,18 +28,15 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Turns the typed values jOOQ reads from a result set into values that serialise to the same JSON
@@ -81,8 +78,6 @@ public final class JsonValues {
         } else if (value instanceof String || value instanceof Boolean || value instanceof Number
                 || value instanceof JSON || value instanceof JSONB) {
             return value;
-        } else if (value instanceof LocalDate date) {
-            return date.toString();
         } else if (value instanceof LocalDateTime timestamp) {
             return formatTimestamp(timestamp);
         } else if (value instanceof OffsetDateTime timestamp) {
@@ -95,14 +90,8 @@ public final class JsonValues {
             return formatTime(time.toLocalTime()) + formatOffset(time.getOffset());
         } else if (value instanceof java.sql.Timestamp timestamp) {
             return formatTimestamp(timestamp.toLocalDateTime());
-        } else if (value instanceof java.sql.Date date) {
-            return date.toLocalDate().toString();
-        } else if (value instanceof java.sql.Time time) {
-            return formatTime(time.toLocalTime());
         } else if (value instanceof byte[] bytes) {
             return "\\x" + HexFormat.of().formatHex(bytes);
-        } else if (value instanceof UUID uuid) {
-            return uuid.toString();
         } else if (value instanceof XML xml) {
             return xml.data();
         } else if (value instanceof SQLXML xml) {
@@ -111,11 +100,10 @@ public final class JsonValues {
             return clob.getSubString(1, (int) clob.length());
         } else if (value instanceof Array array) {
             return toJsonValue(array.getArray());
-        } else if (value instanceof Object[] array) {
-            return toJsonList(Arrays.asList(array));
         } else if (value instanceof Collection<?> collection) {
             return toJsonList(collection);
         } else if (value.getClass().isArray()) {
+            // Object and primitive arrays alike, through reflection.
             int length = java.lang.reflect.Array.getLength(value);
             List<Object> elements = new ArrayList<>(length);
             for (int i = 0; i < length; i++) {
@@ -123,7 +111,9 @@ public final class JsonValues {
             }
             return toJsonList(elements);
         } else {
-            // Driver wrappers for types jOOQ does not know (for example PGobject for inet) print their text form.
+            // Everything else prints its text form: LocalDate, java.sql.Date and java.sql.Time, whose
+            // toString() is the ISO form by contract, UUID, and driver wrappers for types jOOQ does not
+            // know, such as PGobject for inet.
             return value.toString();
         }
     }
