@@ -21,8 +21,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DataRetrieveController {
+    /**
+     * The OpenAPI 2.0 description of the schema, as PostgREST serves at its root: one definition per
+     * table whose properties carry the canonical column type in {@code format}.
+     */
+    @GetMapping(
+            value = {"/api/data/{schema}", "/api/data/{schema}/"},
+            produces = "application/json"
+    )
+    Map<String, Object> openApi(@PathVariable(name = "schema") String schema);
+
     @GetMapping(
             value = "/api/data/{schema}/{table}",
             produces = "application/json"

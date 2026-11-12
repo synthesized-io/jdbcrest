@@ -42,6 +42,54 @@ When no rows match, the response is an empty array:
 []
 ----
 
+=== How values are rendered
+
+Keys follow the column order of the table. Each value is rendered the way PostgREST, and therefore PostgreSQL's own JSON output, prints it, whichever database the row comes from:
+
+[cols="1,2,2"]
+|===
+| Column type | Stored | Returned
+
+| integer, bigint, numeric, boolean | `9007199254740993`, `1.50`, `true` | the same JSON number or boolean, exact digits and scale kept
+| date | `2024-01-07` | `"2024-01-07"`
+| timestamp | `2024-01-07 04:30:57.319412` | `"2024-01-07T04:30:57.319412"`
+| timestamp with time zone | `2024-01-07 04:30:57.319412+02` | `"2024-01-07T02:30:57.319412+00:00"` (moved to UTC)
+| time | `04:30:57.5` | `"04:30:57.5"`
+| time with time zone | `04:30:57.5+02` | `"04:30:57.5+02"`
+| interval | `1 day 02:03:04` | `"1 day 02:03:04"`
+| binary | `\xdeadbeef` | `"\\xdeadbeef"`
+| json, jsonb | `{"tier":"gold"}` | `{"tier":"gold"}` as nested JSON
+| arrays | `{1,2,3}` | `[1,2,3]`
+| xml, uuid, inet and other types | | their text form as a string
+| NULL | | `null`
+|===
+
+Fractional seconds are shown without trailing zeros and omitted when zero.
+
+=== Schema description
+
+- `GET /api/data/{schema}`
+
+returns an OpenAPI 2.0 document, like PostgREST does at its root. Its `definitions` entry lists every table and view of the schema with its columns in order. Each column carries the column type in `format`, named as PostgreSQL names it whichever database is behind the API (`integer`, `numeric`, `timestamp without time zone`, `bytea`, `integer[]`, ...), and the JSON schema `type` of the rendered value (`integer`, `number`, `boolean`, `string`, `array`; json columns have none).
+
+[source,json]
+----
+{
+  "swagger": "2.0",
+  "basePath": "/api/data/public",
+  "paths": { "/users": { "get": { ... } } },
+  "definitions": {
+    "users": {
+      "type": "object",
+      "properties": {
+        "id":   { "format": "integer", "type": "integer" },
+        "name": { "format": "text",    "type": "string" }
+      }
+    }
+  }
+}
+----
+
 == Filtering (query string)
 
 You can filter rows by passing query string parameters. Each parameter name is a column, and the value encodes an operator and its operand(s) using a dot-separated mini-language.

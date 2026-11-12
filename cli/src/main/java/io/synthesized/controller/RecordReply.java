@@ -22,7 +22,7 @@ import lombok.Data;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Data
@@ -31,5 +31,6 @@ public class RecordReply {
     @Getter(
             onMethod_ = @JsonAnyGetter
     )
-    private final Map<String, @Nullable Object> additionalProperties = new HashMap<>();
+    // Insertion ordered so that the JSON keys follow the table's column order, as PostgREST's do.
+    private final Map<String, @Nullable Object> additionalProperties = new LinkedHashMap<>();
 }

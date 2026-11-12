@@ -19,6 +19,7 @@ import io.synthesized.jdbcrest.DataRetrieval;
 import io.synthesized.jdbcrest.JooqQueryTranspiler;
 import io.synthesized.jdbcrest.PostgreQueryTranspiler;
 import io.synthesized.jdbcrest.QueryTranspiler;
+import io.synthesized.jdbcrest.SchemaRetrieval;
 import org.jooq.SQLDialect;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,5 +43,15 @@ public class CoreBeansConfig {
                     default -> new PostgreQueryTranspiler();
                 };
         return new DataRetrieval(dataSource, queryTranspiler);
+    }
+
+    @Bean
+    public SchemaRetrieval schemaRetrieval(DataSource dataSource) {
+        return new SchemaRetrieval(dataSource);
+    }
+
+    @Bean
+    public JooqJsonModule jooqJsonModule() {
+        return new JooqJsonModule();
     }
 }

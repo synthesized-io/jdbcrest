@@ -15,6 +15,16 @@
  */
 package io.synthesized.jdbcrest;
 
+import org.jooq.DSLContext;
+import org.jooq.DataType;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.SQLDialect;
+import org.jooq.exception.SQLDialectNotSupportedException;
+import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultDataType;
+import org.jooq.impl.SQLDataType;
 import org.jspecify.annotations.Nullable;
 
 import javax.sql.DataSource;
@@ -23,9 +33,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -62,17 +71,16 @@ public final class DataRetrieval {
         List<Map<String, @Nullable Object>> result = new ArrayList<>();
         try (Statement stmt = connection.createStatement()) {
             try (ResultSet rs = stmt.executeQuery(sql)) {
-                ResultSetMetaData meta = rs.getMetaData();
-                int colCount = meta.getColumnCount();
-                while (rs.next()) {
-                    Map<String, @Nullable Object> row = new HashMap<>();
-                    for (int i = 1; i <= colCount; i++) {
-                        String colName = meta.getColumnLabel(i);
-                        Object value = switch (meta.getColumnType(i)) {
-                            case Types.NCLOB -> rs.getString(i);
-                            default -> rs.getObject(i);
-                        };
-                        row.put(colName, value);
+                // jOOQ maps each column to a Java type from the result set metadata, which hides the
+                // differences between drivers (timestamptz, timetz, intervals, json, arrays, clobs).
+                // The values are then rendered the way PostgREST prints them while the connection is open.
+                DSLContext dsl = DSL.using(connection);
+                Result<Record> records = dsl.fetch(rs, columnTypes(dsl.family(), rs.getMetaData()));
+                for (Record record : records) {
+                    Field<?>[] fields = record.fields();
+                    Map<String, @Nullable Object> row = new LinkedHashMap<>();
+                    for (int i = 0; i < fields.length; i++) {
+                        row.put(fields[i].getName(), JsonValues.toJsonValue(record.get(i)));
                     }
                     result.add(row);
                 }
@@ -80,6 +88,35 @@ public final class DataRetrieval {
         }
 
         return result;
+    }
+
+    /**
+     * The jOOQ data type of each column, as jOOQ itself derives it from the metadata, except for the
+     * temporal columns. Dates and timestamps are read as {@code java.time} types so that they do not
+     * round-trip through the JVM time zone. Times are read as text, because every binding of a TIME
+     * column goes through {@code java.sql.Time}, which has no fraction of a second; the text form the
+     * driver returns is the one the database prints, {@code 04:30:57.5}.
+     */
+    private static DataType<?>[] columnTypes(SQLDialect family, ResultSetMetaData meta) throws SQLException {
+        DataType<?>[] types = new DataType<?>[meta.getColumnCount()];
+        for (int i = 0; i < types.length; i++) {
+            DataType<?> type = SQLDataType.OTHER;
+            try {
+                type = DefaultDataType.getDataType(family, meta.getColumnTypeName(i + 1),
+                        meta.getPrecision(i + 1), meta.getScale(i + 1));
+            } catch (SQLDialectNotSupportedException e) {
+                // A type jOOQ does not know for this dialect is read with getObject(), as jOOQ does.
+            }
+            if (type.getType() == java.sql.Date.class) {
+                type = SQLDataType.LOCALDATE;
+            } else if (type.getType() == java.sql.Time.class) {
+                type = SQLDataType.VARCHAR;
+            } else if (type.getType() == java.sql.Timestamp.class) {
+                type = SQLDataType.LOCALDATETIME;
+            }
+            types[i] = type;
+        }
+        return types;
     }
 
     private record QueryBody(List<String> terms,
@@ -93,7 +130,8 @@ public final class DataRetrieval {
         Integer limit = null;
         Integer offset = null;
         List<String> terms = new ArrayList<>();
-        Map<String, @Nullable String> columns = new HashMap<>();
+        // Insertion ordered: the select list decides the column order of the response.
+        Map<String, @Nullable String> columns = new LinkedHashMap<>();
         for (Map.Entry<String, ? extends String @Nullable []> entry : params.entrySet()) {
             String column = entry.getKey();
             String @Nullable[] values = entry.getValue();
@@ -113,7 +151,7 @@ public final class DataRetrieval {
     }
 
     static Map<String, String> parseSelectParam(@Nullable String raw) {
-        Map<String, String> columns = new HashMap<>();
+        Map<String, String> columns = new LinkedHashMap<>();
         if (raw == null || raw.isBlank()) return columns;
         for (String item : raw.split(",")) {
             if (item.isBlank()) continue;

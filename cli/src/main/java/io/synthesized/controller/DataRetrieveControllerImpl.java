@@ -16,6 +16,7 @@
 package io.synthesized.controller;
 
 import io.synthesized.jdbcrest.DataRetrieval;
+import io.synthesized.jdbcrest.SchemaRetrieval;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,9 +30,21 @@ import java.util.Map;
 @RestController
 public class DataRetrieveControllerImpl implements DataRetrieveController {
     private final DataRetrieval dataRetrieval;
+    private final SchemaRetrieval schemaRetrieval;
 
-    public DataRetrieveControllerImpl(DataRetrieval dataRetrieval) {
+    public DataRetrieveControllerImpl(DataRetrieval dataRetrieval, SchemaRetrieval schemaRetrieval) {
         this.dataRetrieval = dataRetrieval;
+        this.schemaRetrieval = schemaRetrieval;
+    }
+
+    @Override
+    @GetMapping(value = {"/api/data/{schema}", "/api/data/{schema}/"}, produces = "application/json")
+    public Map<String, Object> openApi(@PathVariable(name = "schema") String schema) {
+        try {
+            return schemaRetrieval.openApi(schema, "/api/data/" + schema);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
