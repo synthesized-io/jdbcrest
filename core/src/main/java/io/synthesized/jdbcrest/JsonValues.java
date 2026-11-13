@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Turns the typed values jOOQ reads from a result set into values that serialise to the same JSON
@@ -53,8 +54,7 @@ import java.util.List;
  * text verbatim and must be written to the output as raw JSON, not as a string.
  */
 public final class JsonValues {
-    private static final int MICROS_PER_NANO = 1000;
-    private static final int MICRO_DIGITS = 6;
+    private static final int NANO_DIGITS = 9;
     private static final int SECONDS_PER_HOUR = 3600;
     private static final int SECONDS_PER_MINUTE = 60;
 
@@ -136,18 +136,21 @@ public final class JsonValues {
         return formatTimestamp(timestamp.withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime()) + "+00:00";
     }
 
-    /** {@code 04:30:57.5}: seconds always shown, the fraction only when non-zero and without trailing zeros. */
+    /**
+     * {@code 04:30:57.5}: seconds always shown, the fraction only when non-zero and without trailing
+     * zeros. All the digits the database stores are kept, up to nanoseconds.
+     */
     static String formatTime(LocalTime time) {
-        return String.format("%02d:%02d:%02d", time.getHour(), time.getMinute(), time.getSecond())
+        return String.format(Locale.ROOT, "%02d:%02d:%02d", time.getHour(), time.getMinute(), time.getSecond())
                 + formatFraction(time.getNano());
     }
 
+    // Every String.format passes Locale.ROOT: with the default locale the digits may not be ASCII.
     private static String formatFraction(int nanos) {
-        int micros = nanos / MICROS_PER_NANO;
-        if (micros == 0) {
+        if (nanos == 0) {
             return "";
         }
-        String digits = String.format("%0" + MICRO_DIGITS + "d", micros);
+        String digits = String.format(Locale.ROOT, "%0" + NANO_DIGITS + "d", nanos);
         int end = digits.length();
         while (digits.charAt(end - 1) == '0') {
             end--;
@@ -160,14 +163,14 @@ public final class JsonValues {
         int total = offset.getTotalSeconds();
         int absolute = Math.abs(total);
         StringBuilder result = new StringBuilder(total < 0 ? "-" : "+");
-        result.append(String.format("%02d", absolute / SECONDS_PER_HOUR));
+        result.append(String.format(Locale.ROOT, "%02d", absolute / SECONDS_PER_HOUR));
         int minutes = (absolute % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE;
         int seconds = absolute % SECONDS_PER_MINUTE;
         if (minutes != 0 || seconds != 0) {
-            result.append(String.format(":%02d", minutes));
+            result.append(String.format(Locale.ROOT, ":%02d", minutes));
         }
         if (seconds != 0) {
-            result.append(String.format(":%02d", seconds));
+            result.append(String.format(Locale.ROOT, ":%02d", seconds));
         }
         return result.toString();
     }
@@ -190,8 +193,8 @@ public final class JsonValues {
                     || dayToSecond.getSeconds() != 0 || dayToSecond.getNano() != 0;
             if (hasTime || parts.isEmpty()) {
                 parts.add((sign < 0 && hasTime ? "-" : "")
-                        + String.format("%02d:%02d:%02d", dayToSecond.getHours(), dayToSecond.getMinutes(),
-                        dayToSecond.getSeconds())
+                        + String.format(Locale.ROOT, "%02d:%02d:%02d", dayToSecond.getHours(),
+                        dayToSecond.getMinutes(), dayToSecond.getSeconds())
                         + formatFraction(dayToSecond.getNano()));
             }
         } else if (parts.isEmpty()) {

@@ -84,11 +84,35 @@ public class SqlTypeNamesTest {
             "_int4, integer[]",
             "_text, text[]",
             "_timestamptz, timestamp with time zone[]",
+            "__status, _status[]",
             "INTEGER ARRAY, integer[]",
             "CHARACTER VARYING ARRAY, character varying[]",
+            "INTEGER ARRAY ARRAY, integer[][]",
     })
     void arraysInEitherSpelling(String driverName, String canonical) {
         assertThat(SqlTypeNames.canonical(Types.ARRAY, driverName)).isEqualTo(canonical);
+    }
+
+    @Test
+    void arrayMarkersInTheNameOfAScalarTypeAreKept() {
+        // A user defined type may be called _status; only the ARRAY type code makes the underscore a marker.
+        // (The Postgres driver reports an enum under the VARCHAR code, so the name falls back on that.)
+        assertThat(SqlTypeNames.canonical(Types.VARCHAR, "_status")).isEqualTo("character varying");
+        assertThat(SqlTypeNames.canonical(Types.OTHER, "_status")).isEqualTo("_status");
+        assertThat(SqlTypeNames.canonical(Types.OTHER, "my array")).isEqualTo("my array");
+    }
+
+    @ParameterizedTest(name = "{1} reported as JDBC type {0} is {2}")
+    @CsvSource({
+            Types.DOUBLE + ", money, money",
+            Types.BIGINT + ", oid, oid",
+            Types.VARCHAR + ", name, name",
+            Types.BIT + ", bit, bit",
+            Types.OTHER + ", varbit, bit varying",
+            Types.BIT + ", bool, boolean",
+    })
+    void postgresNamesWinOverTheGenericJdbcCode(int jdbcType, String driverName, String canonical) {
+        assertThat(SqlTypeNames.canonical(jdbcType, driverName)).isEqualTo(canonical);
     }
 
     @ParameterizedTest(name = "JDBC type {0} is {1}")

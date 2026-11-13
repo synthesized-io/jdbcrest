@@ -37,6 +37,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,9 +97,26 @@ public class JsonValuesTest {
         assertThat(JsonValues.toJsonValue(LocalTime.of(4, 30, 57, 500_000_000))).isEqualTo("04:30:57.5");
         assertThat(JsonValues.toJsonValue(LocalTime.of(4, 30, 57))).isEqualTo("04:30:57");
         assertThat(JsonValues.toJsonValue(LocalTime.of(4, 30, 57, 1_000))).isEqualTo("04:30:57.000001");
-        // Below a microsecond is beyond what Postgres stores, so it is dropped.
-        assertThat(JsonValues.toJsonValue(LocalTime.of(4, 30, 57, 999))).isEqualTo("04:30:57");
+        // Postgres stores microseconds, H2 up to nanoseconds: every stored digit is kept.
+        assertThat(JsonValues.toJsonValue(LocalTime.of(4, 30, 57, 999))).isEqualTo("04:30:57.000000999");
+        assertThat(JsonValues.toJsonValue(TIMESTAMP.withNano(123_456_789))).isEqualTo("2024-01-07T04:30:57.123456789");
         assertThat(JsonValues.toJsonValue(java.sql.Time.valueOf("04:30:57"))).isEqualTo("04:30:57");
+    }
+
+    @Test
+    void formattingDoesNotDependOnTheDefaultLocale() throws SQLException {
+        Locale saved = Locale.getDefault();
+        // A locale whose digits are not ASCII: Arabic-Indic.
+        Locale.setDefault(Locale.forLanguageTag("ar-EG"));
+        try {
+            assertThat(JsonValues.toJsonValue(TIMESTAMP.atOffset(ZoneOffset.ofHoursMinutes(5, 30))))
+                    .isEqualTo("2024-01-06T23:00:57.319412+00:00");
+            assertThat(JsonValues.toJsonValue(LocalTime.of(4, 30, 57, 500_000_000).atOffset(ZoneOffset.ofHours(2))))
+                    .isEqualTo("04:30:57.5+02");
+            assertThat(JsonValues.toJsonValue(new DayToSecond(1, 2, 3, 4, 500_000_000))).isEqualTo("1 day 02:03:04.5");
+        } finally {
+            Locale.setDefault(saved);
+        }
     }
 
     @Test

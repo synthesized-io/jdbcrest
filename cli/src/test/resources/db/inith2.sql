@@ -32,8 +32,9 @@ INSERT INTO products(id, title, price) VALUES (101, 'Bananas', 0.99);
 INSERT INTO products(id, title, price) VALUES (102, 'Carrots', 2.49);
 
 -- One column per type whose JSON rendering is easy to get wrong, for FieldSerializationComparisonTest;
--- the same table as in init.sql. H2 has no jsonb, inet or xml type, so those columns are left out
--- and the corresponding tests are skipped by assumption.
+-- the same table as in init.sql. H2 has no jsonb, inet or xml type, cannot hold an interval of 25 hours
+-- or one whose parts differ in sign, and returns the elements of a TIME array without their fraction,
+-- so those columns are left out and the corresponding tests are skipped by assumption.
 DROP TABLE IF EXISTS type_samples;
 
 CREATE TABLE type_samples (

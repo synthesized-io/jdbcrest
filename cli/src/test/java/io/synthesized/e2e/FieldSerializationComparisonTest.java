@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -59,6 +60,9 @@ public class FieldSerializationComparisonTest {
             "jooq_h2", Map.of(
                     "c_jsonb", "H2 has a single JSON type, covered by c_json",
                     "c_inet", "H2 has no network address type",
+                    "c_interval_hours", "H2 folds the hours of a DAY TO SECOND interval into days",
+                    "c_interval_mixed", "H2 keeps a single sign for the whole interval",
+                    "c_time_array", "H2 hands out the elements of a TIME array as java.sql.Time, without the fraction",
                     "c_xml", "H2 has no XML type"),
             "jooq_hana", Map.ofEntries(
                     Map.entry("c_json", "SAP HANA has no JSON column type"),
@@ -68,10 +72,16 @@ public class FieldSerializationComparisonTest {
                     Map.entry("c_time", "SAP HANA TIME has no fractional seconds"),
                     Map.entry("c_timetz", "SAP HANA has no time zone aware time"),
                     Map.entry("c_interval", "SAP HANA has no interval type"),
+                    Map.entry("c_interval_hours", "SAP HANA has no interval type"),
+                    Map.entry("c_interval_mixed", "SAP HANA has no interval type"),
                     Map.entry("c_int_array", "SAP HANA array columns are not readable through jOOQ"),
                     Map.entry("c_text_array", "SAP HANA array columns are not readable through jOOQ"),
+                    Map.entry("c_time_array", "SAP HANA array columns are not readable through jOOQ"),
                     Map.entry("c_xml", "SAP HANA has no XML type"),
                     Map.entry("c_uuid", "SAP HANA has no UUID type")));
+
+    /** The invocations backed by Postgres, for what only Postgres has. */
+    private static final Set<String> POSTGRES_BACKENDS = Set.of("postgrest", "jooq_postgres");
 
     private static void assumeColumnExists(TestInfo info, String column) {
         String backend = info.getDisplayName();
@@ -191,6 +201,17 @@ public class FieldSerializationComparisonTest {
     }
 
     @TestTemplate
+    void intervalKeepsHoursBeyondADay(RequestSpecification request, TestInfo info) {
+        // Postgres does not fold 25 hours into a day; a typed interval binding would.
+        column(request, info, "c_interval_hours").body("[0].c_interval_hours", equalTo("25:00:00"));
+    }
+
+    @TestTemplate
+    void intervalKeepsTheSignOfEachPart(RequestSpecification request, TestInfo info) {
+        column(request, info, "c_interval_mixed").body("[0].c_interval_mixed", equalTo("1 day -02:00:00"));
+    }
+
+    @TestTemplate
     void bytea(RequestSpecification request, TestInfo info) {
         column(request, info, "c_bytea").body("[0].c_bytea", equalTo("\\xdeadbeef"));
     }
@@ -216,6 +237,13 @@ public class FieldSerializationComparisonTest {
     @TestTemplate
     void textArray(RequestSpecification request, TestInfo info) {
         column(request, info, "c_text_array").body("[0].c_text_array", Matchers.contains("a", "b"));
+    }
+
+    @TestTemplate
+    void timeArrayKeepsTheFraction(RequestSpecification request, TestInfo info) {
+        // The elements of a time array reach the driver as java.sql.Time, which has no fraction.
+        column(request, info, "c_time_array")
+                .body("[0].c_time_array", Matchers.contains("04:30:57.5", "04:30:58"));
     }
 
     @TestTemplate
@@ -264,5 +292,22 @@ public class FieldSerializationComparisonTest {
                 .body("definitions.type_samples.properties.c_bigint.format", equalTo("bigint"))
                 .body("definitions.type_samples.properties.c_bigint.type", equalTo("integer"))
                 .body("definitions.type_samples.properties.c_bytea.format", equalTo("bytea"));
+    }
+
+    /** Every relation the data endpoint can read is described, not only plain tables and views. */
+    @TestTemplate
+    void openApiRootListsPartitionedTablesAndMaterializedViews(RequestSpecification request, TestInfo info) {
+        Assumptions.assumeTrue(POSTGRES_BACKENDS.contains(info.getDisplayName()),
+                () -> info.getDisplayName() + ": partitioned tables and materialized views exist in Postgres only");
+        request
+                .when()
+                .get("/")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body("paths", Matchers.hasKey("/events"))
+                .body("definitions.events.properties.happened_on.format", equalTo("date"))
+                .body("paths", Matchers.hasKey("/product_count"))
+                .body("definitions.product_count.properties.n.format", equalTo("bigint"));
     }
 }

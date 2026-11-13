@@ -58,11 +58,14 @@ CREATE TABLE public.type_samples (
     c_time        TIME,
     c_timetz      TIMETZ,
     c_interval    INTERVAL,
+    c_interval_hours INTERVAL,
+    c_interval_mixed INTERVAL,
     c_bytea       BYTEA,
     c_numeric     NUMERIC(10,2),
     c_bigint      BIGINT,
     c_int_array   INTEGER[],
     c_text_array  TEXT[],
+    c_time_array  TIME[],
     c_xml         XML,
     c_uuid        UUID,
     c_bool        BOOLEAN,
@@ -80,11 +83,14 @@ INSERT INTO public.type_samples VALUES (
     TIME '04:30:57.5',
     TIMETZ '04:30:57.5+02',
     INTERVAL '1 day 02:03:04',
+    INTERVAL '25 hours',
+    INTERVAL '1 day -02:00:00',
     '\xdeadbeef',
     1.50,
     9007199254740993,
     '{1,2,3}',
     '{"a","b"}',
+    '{04:30:57.5,04:30:58}',
     '<a>1</a>',
     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     TRUE,
@@ -94,3 +100,20 @@ INSERT INTO public.type_samples VALUES (
 INSERT INTO public.type_samples (id) VALUES (2);
 
 GRANT SELECT ON public.type_samples TO web_anon;
+
+-- Relation kinds other than plain tables and views that the API can read; the schema description
+-- must list them too.
+DROP TABLE IF EXISTS public.events;
+DROP MATERIALIZED VIEW IF EXISTS public.product_count;
+
+CREATE TABLE public.events (
+    id          INTEGER,
+    happened_on DATE
+) PARTITION BY RANGE (happened_on);
+
+CREATE TABLE public.events_2024 PARTITION OF public.events
+    FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+
+CREATE MATERIALIZED VIEW public.product_count AS SELECT count(*) AS n FROM public.products;
+
+GRANT SELECT ON public.events, public.events_2024, public.product_count TO web_anon;

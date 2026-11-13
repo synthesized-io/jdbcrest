@@ -54,10 +54,34 @@ public class SchemaRetrievalTest {
     }
 
     @Test
-    void arrayOfJsonHasObjectItems() {
+    void arrayOfJsonHasUnconstrainedItems() {
+        // A json value may be a scalar, so the elements get no type, as the json column itself.
         assertThat(SchemaRetrieval.property(Types.ARRAY, "_jsonb")).containsExactly(
                 Map.entry("format", "jsonb[]"),
                 Map.entry("type", "array"),
-                Map.entry("items", Map.of("type", "object")));
+                Map.entry("items", Map.of()));
+    }
+
+    @Test
+    void nestedArrayDescribesEveryLevel() {
+        assertThat(SchemaRetrieval.property(Types.ARRAY, "INTEGER ARRAY ARRAY")).containsExactly(
+                Map.entry("format", "integer[][]"),
+                Map.entry("type", "array"),
+                Map.entry("items", Map.of("type", "array", "items", Map.of("type", "integer"))));
+    }
+
+    @Test
+    void metadataPatternsMatchNamesLiterally() {
+        assertThat(SchemaRetrieval.literalPattern("tenant_a", "\\")).isEqualTo("tenant\\_a");
+        assertThat(SchemaRetrieval.literalPattern("100%_\\", "\\")).isEqualTo("100\\%\\_\\\\");
+        assertThat(SchemaRetrieval.literalPattern("plain", "\\")).isEqualTo("plain");
+        assertThat(SchemaRetrieval.literalPattern("tenant_a", null)).isEqualTo("tenant_a");
+        assertThat(SchemaRetrieval.literalPattern("tenant_a", "")).isEqualTo("tenant_a");
+    }
+
+    @Test
+    void definitionReferenceIsAJsonPointer() {
+        assertThat(SchemaRetrieval.definitionRef("users")).isEqualTo("#/definitions/users");
+        assertThat(SchemaRetrieval.definitionRef("a~1b/c")).isEqualTo("#/definitions/a~01b~1c");
     }
 }

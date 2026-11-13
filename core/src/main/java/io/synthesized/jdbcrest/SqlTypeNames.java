@@ -87,7 +87,15 @@ public final class SqlTypeNames {
             Map.entry("uuid", "uuid"),
             Map.entry("xml", "xml"),
             Map.entry("inet", "inet"),
-            Map.entry("interval", "interval"));
+            Map.entry("interval", "interval"),
+            // Postgres types the driver reports under a generic JDBC code (double, bigint, varchar, bit)
+            // that would otherwise replace the name.
+            Map.entry("money", "money"),
+            Map.entry("oid", "oid"),
+            Map.entry("name", "name"),
+            Map.entry("bit", "bit"),
+            Map.entry("varbit", "bit varying"),
+            Map.entry("bit varying", "bit varying"));
 
     private SqlTypeNames() {
     }
@@ -100,11 +108,16 @@ public final class SqlTypeNames {
      */
     public static String canonical(int jdbcType, @Nullable String driverTypeName) {
         String name = driverTypeName == null ? "" : driverTypeName.toLowerCase(Locale.ROOT).trim();
-        if (name.startsWith("_")) {
-            return canonical(Types.OTHER, name.substring(1)) + "[]";
-        }
-        if (name.endsWith(ARRAY_SUFFIX)) {
-            return canonical(Types.OTHER, name.substring(0, name.length() - ARRAY_SUFFIX.length())) + "[]";
+        if (jdbcType == Types.ARRAY) {
+            // Only an array column has an array marker in its name: a scalar type may be called _status.
+            if (name.startsWith("_")) {
+                // The Postgres driver: one underscore before the element type, however it is named.
+                return canonical(Types.OTHER, name.substring(1)) + "[]";
+            }
+            if (name.endsWith(ARRAY_SUFFIX)) {
+                // The H2 driver: one ARRAY word per dimension.
+                return canonical(Types.ARRAY, name.substring(0, name.length() - ARRAY_SUFFIX.length())) + "[]";
+            }
         }
         if (name.startsWith("interval")) {
             return "interval";

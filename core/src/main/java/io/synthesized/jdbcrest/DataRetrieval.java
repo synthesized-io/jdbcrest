@@ -15,16 +15,18 @@
  */
 package io.synthesized.jdbcrest;
 
+import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.DataType;
 import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.exception.SQLDialectNotSupportedException;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultDataType;
 import org.jooq.impl.SQLDataType;
+import org.jooq.types.Interval;
+import org.jooq.util.postgres.PostgresUtils;
 import org.jspecify.annotations.Nullable;
 
 import javax.sql.DataSource;
@@ -75,14 +77,27 @@ public final class DataRetrieval {
                 // differences between drivers (timestamptz, timetz, intervals, json, arrays, clobs).
                 // The values are then rendered the way PostgREST prints them while the connection is open.
                 DSLContext dsl = DSL.using(connection);
-                Result<Record> records = dsl.fetch(rs, columnTypes(dsl.family(), rs.getMetaData()));
-                for (Record record : records) {
-                    Field<?>[] fields = record.fields();
-                    Map<String, @Nullable Object> row = new LinkedHashMap<>();
-                    for (int i = 0; i < fields.length; i++) {
-                        row.put(fields[i].getName(), JsonValues.toJsonValue(record.get(i)));
+                SQLDialect family = dsl.family();
+                DataType<?>[] columnTypes = columnTypes(family, rs.getMetaData());
+                DataType<?>[] readTypes = new DataType<?>[columnTypes.length];
+                for (int i = 0; i < columnTypes.length; i++) {
+                    readTypes[i] = readableType(family, columnTypes[i]);
+                }
+                // A lazy cursor converts one record at a time, so only the rendered rows are retained.
+                try (Cursor<Record> cursor = dsl.fetchLazy(rs, readTypes)) {
+                    for (Record record : cursor) {
+                        Field<?>[] fields = record.fields();
+                        Map<String, @Nullable Object> row = new LinkedHashMap<>();
+                        for (int i = 0; i < fields.length; i++) {
+                            Object value = record.get(i);
+                            if (value instanceof String text && columnTypes[i].isArray() && !readTypes[i].isArray()) {
+                                // A Postgres array read as text, see readableType(): split into its elements.
+                                value = PostgresUtils.toPGArray(text);
+                            }
+                            row.put(fields[i].getName(), JsonValues.toJsonValue(value));
+                        }
+                        result.add(row);
                     }
-                    result.add(row);
                 }
             }
         }
@@ -90,13 +105,7 @@ public final class DataRetrieval {
         return result;
     }
 
-    /**
-     * The jOOQ data type of each column, as jOOQ itself derives it from the metadata, except for the
-     * temporal columns. Dates and timestamps are read as {@code java.time} types so that they do not
-     * round-trip through the JVM time zone. Times are read as text, because every binding of a TIME
-     * column goes through {@code java.sql.Time}, which has no fraction of a second; the text form the
-     * driver returns is the one the database prints, {@code 04:30:57.5}.
-     */
+    /** The jOOQ data type of each column, as jOOQ itself derives it from the result set metadata. */
     private static DataType<?>[] columnTypes(SQLDialect family, ResultSetMetaData meta) throws SQLException {
         DataType<?>[] types = new DataType<?>[meta.getColumnCount()];
         for (int i = 0; i < types.length; i++) {
@@ -107,16 +116,48 @@ public final class DataRetrieval {
             } catch (SQLDialectNotSupportedException e) {
                 // A type jOOQ does not know for this dialect is read with getObject(), as jOOQ does.
             }
-            if (type.getType() == java.sql.Date.class) {
-                type = SQLDataType.LOCALDATE;
-            } else if (type.getType() == java.sql.Time.class) {
-                type = SQLDataType.VARCHAR;
-            } else if (type.getType() == java.sql.Timestamp.class) {
-                type = SQLDataType.LOCALDATETIME;
-            }
             types[i] = type;
         }
         return types;
+    }
+
+    /**
+     * The type a column is read as, which differs from the column's own type where the binding jOOQ
+     * would use loses part of the value. Dates and timestamps are read as {@code java.time} types so
+     * that they do not round-trip through the JVM time zone. Times are read as text, because every
+     * binding of a TIME column goes through {@code java.sql.Time}, which has no fraction of a second;
+     * the text form the driver returns is the one the database prints, {@code 04:30:57.5}. On Postgres
+     * the same goes for intervals, whose {@code 25:00:00} or {@code 1 day -02:00:00} jOOQ would fold
+     * into days with a single sign. The replacement applies to arrays element-wise, except that a
+     * Postgres array of such elements is read whole as its text literal, split again in
+     * {@link #readData}, since the driver hands out the elements of a time array as
+     * {@code java.sql.Time} too.
+     */
+    private static DataType<?> readableType(SQLDialect family, DataType<?> type) {
+        if (type.isArray()) {
+            DataType<?> component = type.getArrayComponentDataType();
+            if (component == null) {
+                return type;
+            }
+            DataType<?> readable = readableType(family, component);
+            if (readable == component) {
+                return type;
+            }
+            return family == SQLDialect.POSTGRES && readable == SQLDataType.VARCHAR
+                    ? SQLDataType.VARCHAR
+                    : readable.getArrayDataType();
+        }
+        Class<?> javaType = type.getType();
+        if (javaType == java.sql.Date.class) {
+            return SQLDataType.LOCALDATE;
+        } else if (javaType == java.sql.Time.class) {
+            return SQLDataType.VARCHAR;
+        } else if (javaType == java.sql.Timestamp.class) {
+            return SQLDataType.LOCALDATETIME;
+        } else if (family == SQLDialect.POSTGRES && Interval.class.isAssignableFrom(javaType)) {
+            return SQLDataType.VARCHAR;
+        }
+        return type;
     }
 
     private record QueryBody(List<String> terms,

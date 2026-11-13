@@ -56,7 +56,7 @@ Keys follow the column order of the table. Each value is rendered the way PostgR
 | timestamp with time zone | `2024-01-07 04:30:57.319412+02` | `"2024-01-07T02:30:57.319412+00:00"` (moved to UTC)
 | time | `04:30:57.5` | `"04:30:57.5"`
 | time with time zone | `04:30:57.5+02` | `"04:30:57.5+02"`
-| interval | `1 day 02:03:04` | `"1 day 02:03:04"`
+| interval | `1 day 02:03:04`, `25:00:00` | `"1 day 02:03:04"`, `"25:00:00"`: on PostgreSQL the text form of the session (`IntervalStyle`), elsewhere the `postgres` style
 | binary | `\xdeadbeef` | `"\\xdeadbeef"`
 | json, jsonb | `{"tier":"gold"}` | `{"tier":"gold"}` as nested JSON
 | arrays | `{1,2,3}` | `[1,2,3]`
@@ -64,13 +64,13 @@ Keys follow the column order of the table. Each value is rendered the way PostgR
 | NULL | | `null`
 |===
 
-Fractional seconds are shown without trailing zeros and omitted when zero.
+Fractional seconds are shown without trailing zeros and omitted when zero; every digit the database stores is kept, up to nanoseconds.
 
 === Schema description
 
 - `GET /api/data/{schema}`
 
-returns an OpenAPI 2.0 document, like PostgREST does at its root. Its `definitions` entry lists every table and view of the schema with its columns in order. Each column carries the column type in `format`, named as PostgreSQL names it whichever database is behind the API (`integer`, `numeric`, `timestamp without time zone`, `bytea`, `integer[]`, ...), and the JSON schema `type` of the rendered value (`integer`, `number`, `boolean`, `string`, `array`; json columns have none).
+returns an OpenAPI 2.0 document, like PostgREST does at its root. Its `definitions` entry lists every table and view of the schema (on PostgreSQL also every materialized view, partitioned table and foreign table) with its columns in order. Each column carries the column type in `format`, named as PostgreSQL names it whichever database is behind the API (`integer`, `numeric`, `timestamp without time zone`, `bytea`, `integer[]`, ...), and the JSON schema `type` of the rendered value (`integer`, `number`, `boolean`, `string`, `array`; json columns have none).
 
 [source,json]
 ----
