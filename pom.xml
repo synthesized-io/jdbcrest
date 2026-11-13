@@ -47,7 +47,7 @@
     </modules>
 
     <properties>
-        <revision>1.5</revision>
+        <revision>1.6</revision>
         <!-- Java release the published bytecode targets (main sources). -->
         <java.version>17</java.version>
         <!-- Java release used to compile the test sources (tests may use newer language features). -->
