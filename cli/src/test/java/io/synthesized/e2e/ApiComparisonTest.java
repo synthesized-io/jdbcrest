@@ -17,16 +17,17 @@ package io.synthesized.e2e;
 
 
 import io.restassured.specification.RequestSpecification;
+import io.synthesized.e2e.comparison.JdbcrestBackends;
+import org.atpfivt.comparison.api.ComparisonTest;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
-@ExtendWith(ComparisonTestExtension.class)
-public class ComparisonTest {
-    @TestTemplate
+@ComparisonTest(source = JdbcrestBackends.class)
+public class ApiComparisonTest {
+    @Test
     void emptyTableReturnsEmptyList(RequestSpecification request) {
         request
                 .when()
@@ -36,7 +37,7 @@ public class ComparisonTest {
                 .body("size()", equalTo(0));
     }
 
-    @TestTemplate
+    @Test
     void usersReturnsUsers(RequestSpecification request) {
         request
                 .when()
@@ -50,7 +51,7 @@ public class ComparisonTest {
                 .body("[1].name", equalTo("Bob"));
     }
 
-    @TestTemplate
+    @Test
     void usersEq(RequestSpecification request) {
         request
                 .when()
@@ -62,7 +63,7 @@ public class ComparisonTest {
                 .body("[0].name", equalTo("Bob"));
     }
 
-    @TestTemplate
+    @Test
     void usersGt(RequestSpecification request) {
         request
                 .when()
@@ -74,7 +75,7 @@ public class ComparisonTest {
                 .body("[0].name", equalTo("Bob"));
     }
 
-    @TestTemplate
+    @Test
     void usersGte(RequestSpecification request) {
         request
                 .when()
@@ -86,7 +87,7 @@ public class ComparisonTest {
                 .body("[0].name", equalTo("Bob"));
     }
 
-    @TestTemplate
+    @Test
     void usersLt(RequestSpecification request) {
         request
                 .when()
@@ -98,7 +99,7 @@ public class ComparisonTest {
                 .body("[0].name", equalTo("Alice"));
     }
 
-    @TestTemplate
+    @Test
     void usersLte(RequestSpecification request) {
         request
                 .when()
@@ -110,7 +111,7 @@ public class ComparisonTest {
                 .body("[0].name", equalTo("Alice"));
     }
 
-    @TestTemplate
+    @Test
     void usersTwoConditions(RequestSpecification request) {
         request
                 .when()
@@ -122,7 +123,7 @@ public class ComparisonTest {
                 .body("[0].name", equalTo("Alice"));
     }
 
-    @TestTemplate
+    @Test
     void usersInOperator(RequestSpecification request) {
         request
                 .when()
@@ -134,7 +135,7 @@ public class ComparisonTest {
                 .body("title", Matchers.containsInAnyOrder("Apples", "Carrots"));
     }
 
-    @TestTemplate
+    @Test
     void orOperator(RequestSpecification request) {
         request
                 .when()
@@ -148,7 +149,7 @@ public class ComparisonTest {
                 .body("title", Matchers.hasItem("Carrots"));
     }
 
-    @TestTemplate
+    @Test
     void andOperatorSingleOperand(RequestSpecification request) {
         request
                 .when()
@@ -159,7 +160,7 @@ public class ComparisonTest {
                 .body("id", Matchers.contains(100));
     }
 
-    @TestTemplate
+    @Test
     void notOrOperator(RequestSpecification request) {
         request
                 .when()
@@ -171,7 +172,7 @@ public class ComparisonTest {
                 .body("id", Matchers.hasItem(101));
     }
 
-    @TestTemplate
+    @Test
     void notEqOperator(RequestSpecification request) {
         request
                 .when()
@@ -183,7 +184,7 @@ public class ComparisonTest {
                 .body("id", Matchers.hasItem(101));
     }
 
-    @TestTemplate
+    @Test
     void limit(RequestSpecification request) {
         request
                 .when()
@@ -194,7 +195,7 @@ public class ComparisonTest {
                 .body("id", Matchers.hasItem(100));
     }
 
-    @TestTemplate
+    @Test
     void limitOffset(RequestSpecification request) {
         request
                 .when()
@@ -205,7 +206,7 @@ public class ComparisonTest {
                 .body("id", Matchers.not(Matchers.hasItem(100)));
     }
 
-    @TestTemplate
+    @Test
     void selectColumns(RequestSpecification request) {
         request
                 .when()
@@ -220,7 +221,7 @@ public class ComparisonTest {
                 )))
                 .body("id", Matchers.hasItem(100));
     }
-    @TestTemplate
+    @Test
     void selectColumnsWithAliases(RequestSpecification request) {
         request
                 .when()
@@ -235,7 +236,7 @@ public class ComparisonTest {
                 .body("c1", Matchers.hasItem(100));
     }
 
-    @TestTemplate
+    @Test
     void aggregateCount(RequestSpecification request) {
         request
                 .when()
@@ -246,7 +247,7 @@ public class ComparisonTest {
                 .body("[0].c", equalTo(3));
     }
 
-    @TestTemplate
+    @Test
     void aggregateSum(RequestSpecification request) {
         request
                 .when()
@@ -257,7 +258,7 @@ public class ComparisonTest {
                 .body("[0].sum1", equalTo(5.47F));
     }
 
-    @TestTemplate
+    @Test
     void aggregateAvg(RequestSpecification request) {
         request
                 .when()
@@ -268,7 +269,7 @@ public class ComparisonTest {
                 .body("[0].avg", Matchers.is(Matchers.anything()));
     }
 
-    @TestTemplate
+    @Test
     void aggregateMinMax(RequestSpecification request) {
         request
                 .when()
@@ -280,7 +281,7 @@ public class ComparisonTest {
                 .body("[0].max", equalTo(2.49F));
     }
 
-    @TestTemplate
+    @Test
     void aggregateGroupBy(RequestSpecification request) {
         request
                 .when()
