@@ -40,11 +40,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
+
 public final class DataRetrieval {
-    private final DataSource dataSource;
+    private final @Nullable DataSource dataSource;
     private final QueryTranspiler queryTranspiler;
 
-    public DataRetrieval(DataSource dataSource, QueryTranspiler queryTranspiler) {
+    public DataRetrieval(@Nullable DataSource dataSource, QueryTranspiler queryTranspiler) {
         this.dataSource = dataSource;
         this.queryTranspiler = queryTranspiler;
     }
@@ -52,7 +54,7 @@ public final class DataRetrieval {
     public List<Map<String, @Nullable Object>> readData(String schema, String table,
                                                         Map<String, ? extends String @Nullable []> params)
             throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = requireNonNull(dataSource).getConnection()) {
             return readData(connection, schema, table, params);
         }
     }
@@ -105,7 +107,9 @@ public final class DataRetrieval {
         return result;
     }
 
-    /** The jOOQ data type of each column, as jOOQ itself derives it from the result set metadata. */
+    /**
+     * The jOOQ data type of each column, as jOOQ itself derives it from the result set metadata.
+     */
     private static DataType<?>[] columnTypes(SQLDialect family, ResultSetMetaData meta) throws SQLException {
         DataType<?>[] types = new DataType<?>[meta.getColumnCount()];
         for (int i = 0; i < types.length; i++) {
@@ -175,7 +179,7 @@ public final class DataRetrieval {
         Map<String, @Nullable String> columns = new LinkedHashMap<>();
         for (Map.Entry<String, ? extends String @Nullable []> entry : params.entrySet()) {
             String column = entry.getKey();
-            String @Nullable[] values = entry.getValue();
+            String @Nullable [] values = entry.getValue();
             if (values == null) continue;
             for (String raw : values) {
                 if (raw == null) continue;
